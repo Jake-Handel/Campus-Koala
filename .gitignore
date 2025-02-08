@@ -137,3 +137,6 @@ Icon?
 /frontend/out/
 /frontend/build/
 .vercel
+
+# vscode
+.vscode
