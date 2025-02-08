@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+package.json
+package-lock.json
 .pnp
 .pnp.js
 .yarn/install-state.gz
@@ -148,5 +150,4 @@ Icon?
 .history/
 
 # Others
-package-lock.json
 package-lock.json
