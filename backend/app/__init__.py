@@ -39,4 +39,7 @@ def create_app(config_name='default'):
         app.register_blueprint(calendar_bp)
         app.register_blueprint(study_bp)
         
+        # Create database tables if they don't exist
+        db.create_all()
+        
     return app

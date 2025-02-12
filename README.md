@@ -28,21 +28,15 @@ study-app/
 
 ### Backend Setup
 
-1. Create and activate virtual environment:
+1. Install dependencies:
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate
+pip3 install -r requirements.txt
 ```
 
-2. Install dependencies:
+2. Run the Flask server:
 ```bash
-pip install -r requirements.txt
-```
-
-3. Run the Flask server:
-```bash
-python app.py
+python3 app.py
 ```
 
 ### Frontend Setup

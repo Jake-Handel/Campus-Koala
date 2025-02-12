@@ -18,8 +18,8 @@ export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Don't show sidebar on login or register pages
-  if (pathname === '/login' || pathname === '/register') {
+  // Don't show sidebar on login, register, or landing page
+  if (pathname === '/login' || pathname === '/register' || pathname === '/') {
     return null;
   }
 
@@ -32,93 +32,117 @@ export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {
     <>
       {/* Hamburger Menu Button - Only show when sidebar is closed */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-          aria-label="Open Menu"
-        >
-          <FiMenu className="h-6 w-6 text-gray-700" />
-        </button>
+        <div className="fixed top-6 left-6 z-50">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="group relative flex h-12 w-12 items-center justify-center rounded-xl 
+                     bg-white/80 shadow-lg backdrop-blur-sm border border-gray-100
+                     hover:bg-white hover:shadow-xl hover:scale-105
+                     focus:outline-none focus:ring-2 focus:ring-primary/50
+                     transition-all duration-200"
+            aria-label="Open Menu"
+          >
+            <div className="flex w-5 flex-col items-end space-y-1.5">
+              <div className="h-0.5 w-5 rounded-full bg-gray-600 transition-all duration-200
+                            group-hover:w-4 group-hover:bg-primary"></div>
+              <div className="h-0.5 w-4 rounded-full bg-gray-600 transition-all duration-200
+                            group-hover:w-5 group-hover:bg-primary"></div>
+              <div className="h-0.5 w-3 rounded-full bg-gray-600 transition-all duration-200
+                            group-hover:w-4 group-hover:bg-primary"></div>
+            </div>
+          </button>
+        </div>
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-xl transition-all duration-300 ease-in-out z-40 overflow-hidden
-          ${isOpen ? 'w-64' : 'w-0'}`}
+        className={`fixed top-0 left-0 h-full bg-white/90 backdrop-blur-sm shadow-xl 
+                   transition-all duration-300 ease-in-out z-40 overflow-hidden
+                   border-r border-gray-100 ${isOpen ? 'w-64' : 'w-0'}`}
       >
         {isOpen && (
           <div className="h-full flex flex-col">
             {/* Close button */}
-            <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
-              <h1 className="text-xl font-semibold text-gray-900">Campus Koala</h1>
+            <div className="flex justify-end p-4">
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                className="group flex h-10 w-10 items-center justify-center rounded-lg
+                         hover:bg-gray-100 transition-colors duration-200"
                 aria-label="Close Menu"
               >
-                <FiX className="h-5 w-5 text-gray-500" />
+                <FiX className="h-6 w-6 text-gray-500 transition-colors duration-200
+                              group-hover:text-primary" />
               </button>
             </div>
 
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto py-4 px-3">
-              <nav className="space-y-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center py-2 px-3 rounded-md transition-all duration-200
-                        ${isActive
-                          ? 'bg-blue-50 text-blue-600 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
-                    >
-                      <Icon className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'} mr-3`} />
-                      <span className="text-sm">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-
-              {/* Tasks Section */}
-              {tasks?.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Recent Tasks
-                  </h3>
-                  <div className="mt-2 space-y-1">
-                    {tasks.map((task) => {
-                      const isActive = pathname === `/tasks/${task.id}`;
-                      return (
-                        <Link
-                          key={task.id}
-                          href={`/tasks/${task.id}`}
-                          className={`flex items-center py-2 px-3 text-sm rounded-md transition-all duration-200
-                            ${isActive
-                              ? 'bg-blue-50 text-blue-600 font-medium'
-                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                            }`}
-                        >
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-3" />
-                          <span className="truncate">{task.title}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+            {/* Logo/Title */}
+            <div className="px-6 mb-8">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Campus Koala
+              </h1>
             </div>
 
+            {/* Navigation Links */}
+            <nav className="flex-1 px-4">
+              <ul className="space-y-2">
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`flex items-center px-4 py-2.5 rounded-lg transition-all duration-200
+                          ${isActive 
+                            ? 'bg-primary/10 text-primary font-medium' 
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-primary'
+                          }`}
+                      >
+                        <Icon className="h-5 w-5 mr-3" />
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+
+            {/* Tasks Section */}
+            {tasks?.length > 0 && (
+              <div className="mt-6">
+                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Recent Tasks
+                </h3>
+                <div className="mt-2 space-y-1">
+                  {tasks.map((task) => {
+                    const isActive = pathname === `/tasks/${task.id}`;
+                    return (
+                      <Link
+                        key={task.id}
+                        href={`/tasks/${task.id}`}
+                        className={`flex items-center py-2 px-3 text-sm rounded-md transition-all duration-200
+                          ${isActive
+                            ? 'bg-blue-50 text-blue-600 font-medium'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          }`}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-3" />
+                        <span className="truncate">{task.title}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Sign Out Button */}
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 mt-auto">
               <button
                 onClick={handleSignOut}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200"
+                className="flex w-full items-center px-4 py-2.5 text-gray-600 rounded-lg
+                         hover:bg-gray-50 hover:text-primary transition-all duration-200"
               >
-                <FiLogOut className="h-5 w-5 text-gray-400 mr-3" />
+                <FiLogOut className="h-5 w-5 mr-3" />
                 Sign Out
               </button>
             </div>

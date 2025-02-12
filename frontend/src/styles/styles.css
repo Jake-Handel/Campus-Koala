@@ -1,45 +1,92 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #4f46e5;
+  --primary-light: #6366f1;
+  --secondary: #0ea5e9;
+}
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-indigo-50 via-sky-50 to-gray-50;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     margin: 0;
     padding: 20px;
+    min-height: 100vh;
+  }
 }
 
-.task-form {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    max-width: 400px;
-    margin: auto;
+@layer components {
+  .task-form {
+    @apply bg-white bg-opacity-90 backdrop-filter backdrop-blur-md p-6 rounded-2xl shadow-md max-w-md mx-auto border border-white/20 transition-all duration-300;
+  }
+
+  .task-form:hover {
+    @apply shadow-lg border-white/30 transform -translate-y-1;
+  }
+
+  .task-form div {
+    @apply mb-4;
+  }
+
+  .task-form label {
+    @apply block mb-2 text-gray-900 font-medium text-sm;
+  }
+
+  .task-form input,
+  .task-form textarea {
+    @apply w-full p-4 border border-gray-300 rounded-lg bg-white/70 text-gray-900 transition-all duration-200;
+  }
+
+  .task-form input:hover,
+  .task-form textarea:hover {
+    @apply bg-white/80 border-gray-400;
+  }
+
+  .task-form input:focus,
+  .task-form textarea:focus {
+    @apply outline-none bg-white border-gray-500 ring-2 ring-gray-500/20;
+  }
+
+  .task-form button {
+    @apply bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 text-sm font-medium rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .task-form button:hover {
+    @apply bg-gradient-to-r from-primary to-secondary transform -translate-y-1 shadow-lg;
+  }
+
+  .task-form button:active {
+    @apply transform translate-y-0 shadow-md;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium 
+           rounded-lg shadow-sm transition-all duration-200 
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-secondary text-white
+           hover:bg-gradient-to-r hover:from-primary-light hover:to-secondary
+           focus:ring-primary/50;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-gray-700 border border-gray-200
+           hover:bg-gray-50 hover:text-gray-900
+           focus:ring-gray-500/50;
+  }
 }
 
-.task-form div {
-    margin-bottom: 15px;
-}
-
-.task-form label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.task-form input,
-.task-form textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.task-form button {
-    background-color: #28a745;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.task-form button:hover {
-    background-color: #218838;
+/* Modern background with layered gradients */
+.bg-background {
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(79, 70, 229, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.05) 0%, transparent 50%),
+    linear-gradient(to bottom right, rgba(79, 70, 229, 0.02), rgba(14, 165, 233, 0.02));
 }

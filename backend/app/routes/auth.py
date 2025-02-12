@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import User
+import re
 from app.utils import validate_request_data
 
 bp = Blueprint('auth', __name__, url_prefix='/api')
@@ -19,10 +20,17 @@ def register():
         valid, error = validate_request_data(data, ['username', 'email', 'password'])
         if not valid:
             return jsonify({'error': error}), 400
-            
+        
+        password = data['password']
         # Validate password strength
-        if len(data['password']) < 8:
-            return jsonify({'error': 'Password must be at least 8 characters long'}), 400
+        if (
+        len(password) < 8 or 
+        not re.search(r'[A-Za-z]', password) or 
+        not re.search(r'[0-9]', password) or 
+        not re.search(r'[@$!%*?&]', password)
+        ):
+            return jsonify({"error": "Password format is incorrect, please include a special character, an upper and lowercase letter and must be more then 8 characters long."}), 
+        abort(400, description="Password format is incorrect, please include a special character, an upper and lowercase letter and must be more then 8 characters long.")
             
         # Check if user already exists
         if User.query.filter_by(username=data['username']).first():
