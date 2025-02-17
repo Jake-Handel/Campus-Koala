@@ -1,10 +1,10 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from config import config
+from flask_jwt_extended.exceptions import JWTExtendedException
 
-# Initialize extensions
 db = SQLAlchemy()
 jwt = JWTManager()
 
@@ -12,7 +12,6 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # Initialize extensions with app
     db.init_app(app)
     jwt.init_app(app)
     
@@ -20,12 +19,46 @@ def create_app(config_name='default'):
     CORS(app, resources={
         r"/api/*": {
             "origins": ["http://localhost:3002"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "Accept"],
             "expose_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True
+            "supports_credentials": True,
+            "max_age": 3600
         }
-    })
+    }, supports_credentials=True)
+    
+    # JWT error handlers
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify({
+            'error': 'Your session has expired. Please log in again.'
+        }), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error_string):
+        return jsonify({
+            'error': 'Invalid authentication token'
+        }), 401
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error_string):
+        return jsonify({
+            'error': 'Authentication token is missing'
+        }), 401
+
+    @jwt.needs_fresh_token_loader
+    def token_not_fresh_callback(jwt_header, jwt_payload):
+        return jsonify({
+            'error': 'A fresh login is required'
+        }), 401
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return jsonify({
+            'error': 'Token has been revoked'
+        }), 401
+    
+
     
     with app.app_context():
         # Register blueprints

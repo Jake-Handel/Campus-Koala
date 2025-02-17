@@ -1,133 +1,244 @@
 from flask import Blueprint, request, jsonify, make_response, current_app
-from flask_jwt_extended import jwt_required, get_current_user
-from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request, get_jwt
+from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, JWTExtendedException
 from datetime import datetime
 from app.models.task import Task
+from app.models.user import User
 from app import db
+import traceback
+import json
 
 bp = Blueprint('tasks', __name__, url_prefix='/api/tasks')
 
+def get_current_user():
+    """Helper function to get and validate current user"""
+    user_id = get_jwt_identity()
+    try:
+        user_id = int(user_id)
+    except (ValueError, TypeError):
+        return None
+        
+    current_user = User.query.get(user_id)
+    if not current_user:
+        return None
+        
+    return current_user
+
 @bp.errorhandler(NoAuthorizationError)
 @bp.errorhandler(InvalidHeaderError)
+@bp.errorhandler(JWTExtendedException)
 def handle_auth_error(e):
-    return jsonify({"error": str(e)}), 401
+    return jsonify({"error": "Authentication failed. Please log in again."}), 401
 
-@bp.route('', methods=['GET'])  
-@bp.route('/', methods=['GET'])  
+@bp.route('', methods=['GET', 'OPTIONS'])  
+@bp.route('/', methods=['GET', 'OPTIONS'])  
 @jwt_required()
 def get_tasks():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
-        # Get current user from JWT token
-        current_user = get_current_user()
-        if not current_user:
+        # Get user ID from JWT token
+        user_id = get_jwt_identity()
+        
+        if user_id is None:
+
+            return jsonify({"error": "Authentication required"}), 401
+            
+        try:
+            user_id = int(user_id)  # Convert string ID back to integer
+        except (ValueError, TypeError):
+
+            return jsonify({"error": "Invalid authentication token"}), 401
+        
+        # Verify user exists
+        current_user = User.query.get(user_id)
+        if current_user is None:
+
             return jsonify({"error": "User not found"}), 401
+        
 
+        
+        # Get tasks for user
         tasks = Task.query.filter_by(user_id=current_user.id).all()
-        return jsonify([task.to_dict() for task in tasks]), 200
+        
+
+        
+        response = jsonify([task.to_dict() for task in tasks])
+        return response, 200
+    except JWTExtendedException as e:
+        return jsonify({"error": "Authentication failed. Please log in again."}), 401
     except Exception as e:
+        return jsonify({"error": "Failed to fetch tasks. Please try again."}), 500
 
-        return jsonify({"error": str(e)}), 422
-
-@bp.route('', methods=['POST'])
-@bp.route('/', methods=['POST'])
+@bp.route('', methods=['POST', 'OPTIONS'])
+@bp.route('/', methods=['POST', 'OPTIONS'])
 @jwt_required()
 def create_task():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         current_user = get_current_user()
         if not current_user:
-            return jsonify({"error": "User not found"}), 401
+            return jsonify({"error": "Authentication failed"}), 401
+            
+        # Parse request data
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+        except Exception as e:
+            return jsonify({"error": "Invalid JSON data"}), 400
 
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
+        # Validate required fields
+        if 'title' not in data:
+            return jsonify({"error": "Title is required"}), 400
 
-        required_fields = ['title']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({"error": f"Missing required field: {field}"}), 400
+        title = data['title'].strip()
+        if not title:
+            return jsonify({"error": "Title cannot be empty"}), 400
 
-        # Convert string date to datetime if provided
-        due_date = None
-        if data.get('due_date'):
-            try:
-                due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
-            except ValueError:
-                return jsonify({"error": "Invalid due date format"}), 400
+        try:
+            # Create task with validated data
+            task = Task(
+                title=title,
+                description=data.get('description', '').strip(),
+                user_id=current_user.id,
+                completed=bool(data.get('completed', False)),
+                priority=int(data.get('priority', 1))
+            )
 
-        new_task = Task(
-            title=data['title'].strip(),
-            description=data.get('description', '').strip(),
-            due_date=due_date,
-            priority=data.get('priority', 1),
-            user_id=current_user.id,
-            completed=False
-        )
+            if 'due_date' in data:
+                try:
+                    task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                except ValueError:
+                    return jsonify({"error": "Invalid due date format"}), 400
 
-        db.session.add(new_task)
-        db.session.commit()
-        return jsonify(new_task.to_dict()), 201
+            db.session.add(task)
+            db.session.commit()
+            
 
+            return jsonify(task.to_dict()), 201
+
+        except ValueError as e:
+
+            return jsonify({"error": "Invalid value provided"}), 400
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": "Failed to create task"}), 500
+            
     except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
-@bp.route('/<int:task_id>', methods=['PUT', 'PATCH'])
+@bp.route('/<int:task_id>', methods=['PUT', 'PATCH', 'OPTIONS'])
 @jwt_required()
 def update_task(task_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+
+    
     try:
-        # Get current user from JWT token
         current_user = get_current_user()
         if not current_user:
-            return jsonify({"error": "User not found"}), 401
+            return jsonify({"error": "Authentication failed"}), 401
 
+        # Find task
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        
         if not task:
             return jsonify({"error": "Task not found"}), 404
-        
-        data = request.get_json()
-        
-        # For PATCH requests, only update specified fields
-        if request.method == 'PATCH':
-            if 'completed' in data:
-                task.completed = data['completed']
-        # For PUT requests, update all fields if provided
-        else:
-            if 'title' in data:
-                task.title = data['title']
-            if 'description' in data:
-                task.description = data['description']
-            if 'due_date' in data:
-                task.due_date = parse_datetime(data['due_date'])
-            if 'completed' in data:
-                task.completed = data['completed']
-            if 'priority' in data:
-                task.priority = data['priority']
-            if 'calendar_event_id' in data:
-                task.calendar_event_id = data['calendar_event_id']
-        
-        db.session.commit()
-        return jsonify(task.to_dict()), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 422
+            
+        # Parse request data
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+        except Exception as e:
+            return jsonify({"error": "Invalid JSON data"}), 400
+            
+        # Update task fields based on request method
+        try:
+            if request.method == 'PATCH':
 
-@bp.route('/<int:task_id>', methods=['DELETE'])  
+                # For PATCH, only update specified fields
+                if 'completed' in data:
+                    task.completed = bool(data['completed'])
+    
+                if 'title' in data:
+                    task.title = data['title'].strip()
+                if 'description' in data:
+                    task.description = data.get('description', '').strip()
+                if 'priority' in data:
+                    task.priority = int(data['priority'])
+                if 'due_date' in data:
+                    try:
+                        task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                    except ValueError:
+                        return jsonify({"error": "Invalid due date format"}), 400
+            else:  # PUT request
+                current_app.logger.debug(f'PUT request data: {data}')
+                # Validate required fields
+                if 'title' not in data:
+                    return jsonify({"error": "Title is required"}), 400
+                    
+                # Update all fields
+                task.title = data['title'].strip()
+                task.description = data.get('description', '').strip()
+                task.completed = bool(data.get('completed', False))
+                task.priority = int(data.get('priority', 1))
+                
+                if 'due_date' in data:
+                    try:
+                        task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                    except ValueError:
+                        return jsonify({"error": "Invalid due date format"}), 400
+            
+            # Save changes
+            db.session.commit()
+            return jsonify(task.to_dict()), 200
+            
+        except ValueError as e:
+            return jsonify({"error": "Invalid value provided"}), 400
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": "Failed to update task"}), 500
+        
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Successfully updated task {task_id}')
+            
+            return jsonify(task.to_dict()), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Database error while updating task: {str(e)}\nTraceback: {traceback.format_exc()}')
+            return jsonify({"error": "Failed to save task updates"}), 500
+            
+    except JWTExtendedException as e:
+        return jsonify({"error": "Authentication failed. Please log in again."}), 401
+    except Exception as e:
+        return jsonify({"error": "An error occurred while updating the task"}), 500
+
+@bp.route('/<int:task_id>', methods=['DELETE', 'OPTIONS'])  
 @jwt_required()
 def delete_task(task_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
-        # Get current user from JWT token
         current_user = get_current_user()
         if not current_user:
-            return jsonify({"error": "User not found"}), 401
+            return jsonify({"error": "Authentication failed"}), 401
 
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        
         if not task:
             return jsonify({"error": "Task not found"}), 404
+            
         
         db.session.delete(task)
         db.session.commit()
         
         return jsonify({"message": "Task deleted successfully"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 422
+        return jsonify({"error": "An error occurred while processing your request"}), 500

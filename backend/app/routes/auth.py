@@ -1,10 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import User
 import re
 from app.utils import validate_request_data
+from datetime import timedelta
+import traceback
 
 bp = Blueprint('auth', __name__, url_prefix='/api')
 
@@ -46,7 +48,7 @@ def register():
         )
         
         # Generate access token
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         
         return jsonify({
             'message': 'Registration successful',
@@ -64,28 +66,51 @@ def login():
         return '', 200
         
     try:
-        data = request.get_json()
+        try:
+            data = request.get_json()
+        except Exception as e:
+            return jsonify({"error": "Invalid request data"}), 400
         
         # Validate required fields
         valid, error = validate_request_data(data, ['username', 'password'])
         if not valid:
+
             return jsonify({'error': error}), 400
         
         # Find user and verify password
         user = User.query.filter_by(username=data['username']).first()
-        if not user or not user.verify_password(data['password']):
+        if not user:
+
+            return jsonify({"error": "Invalid username or password"}), 401
+            
+        if not user.verify_password(data['password']):
+
             return jsonify({"error": "Invalid username or password"}), 401
         
-        # Generate access token
-        access_token = create_access_token(identity=user.id)
+        # Generate access token with additional claims
+        additional_claims = {
+            'username': user.username,
+            'type': 'access'
+        }
         
-        return jsonify({
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims=additional_claims,
+            fresh=True
+        )
+        
+
+        
+        response = jsonify({
             'access_token': access_token,
             'user': user.to_dict()
-        }), 200
+        })
+        response.headers['Authorization'] = f'Bearer {access_token}'
+        return response, 200
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+        return jsonify({"error": "An error occurred during login"}), 500
 
 @bp.route('/profile', methods=['GET', 'OPTIONS'])
 @jwt_required()

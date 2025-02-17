@@ -33,12 +33,20 @@ export default function TasksPage() {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
       });
       if (response.ok) {
         const data = await response.json();
         setTasks(Array.isArray(data) ? data : []);
+      } else if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('token');
+        router.push('/login');
+      } else {
+        const errorData = await response.json();
+        console.error('Error fetching tasks:', errorData.error);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -99,10 +107,16 @@ export default function TasksPage() {
         }
       });
       if (response.ok) {
-        fetchTasks();
+        await fetchTasks();
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        router.push('/login');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to delete task');
       }
     } catch (error) {
-
+      alert('Failed to delete task. Please try again.');
     }
   };
 
@@ -118,10 +132,16 @@ export default function TasksPage() {
         body: JSON.stringify({ completed: !completed }),
       });
       if (response.ok) {
-        fetchTasks();
+        await fetchTasks();
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        router.push('/login');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to update task');
       }
     } catch (error) {
-
+      alert('Failed to update task. Please try again.');
     }
   };
 

@@ -12,12 +12,17 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///study_app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # JWT
+    # JWT Configuration
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_TOKEN_LOCATION = ['headers']
+    JWT_HEADER_NAME = 'Authorization'
+    JWT_HEADER_TYPE = 'Bearer'
+    JWT_ERROR_MESSAGE_KEY = 'error'
+    JWT_IDENTITY_CLAIM = 'sub'
     
-    # CORS
-    CORS_HEADERS = 'Content-Type'
+    # CORS Configuration
+    CORS_ORIGINS = 'http://localhost:3002'
 
 class DevelopmentConfig(Config):
     DEBUG = True

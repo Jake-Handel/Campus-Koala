@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className="flex min-h-screen">
           <Sidebar />
-          <div className="fixed top-0 left-0 h-full bg-white/90 backdrop-blur-sm shadow-flow-hidden border-r border-gray-100 w-0"></div>
+
           <main className="flex-1 transition-all duration-300 overflow-auto">
             {children}
           </main>

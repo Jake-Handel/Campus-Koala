@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Task } from '../types/Task';
@@ -17,6 +17,11 @@ export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Ensure sidebar is closed when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
   // Don't show sidebar on login, register, or landing page
   if (pathname === '/login' || pathname === '/register' || pathname === '/') {
