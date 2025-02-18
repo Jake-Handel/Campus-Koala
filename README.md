@@ -2,27 +2,7 @@
 
 A full-stack study application built with Next.js and Flask. Features include task management, study timer with game time rewards, and calendar integration.
 
-## Project Structure
-
-```
-study-app/
-├── backend/
-│   ├── venv/
-│   ├── app.py
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── auth/
-│   │   │   ├── tasks/
-│   │   │   └── timer/
-│   │   ├── pages/
-│   │   ├── styles/
-│   │   └── types/
-│   ├── public/
-│   └── package.json
-└── README.md
-```
+Campus Koala aims to foucs and enhance a student or teacher's study experience by tracking their progress and rewards. The app is designed to be user-friendly and accessible, with a focus on ease of use and integration with other tools. 
 
 ## Setup
 
