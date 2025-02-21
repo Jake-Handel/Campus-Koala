@@ -3,6 +3,14 @@ const nextConfig = {
   reactStrictMode: true,
   pageExtensions: ['tsx', 'ts'],
   distDir: '.next',
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5001/api/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

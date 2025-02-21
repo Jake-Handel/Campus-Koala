@@ -123,11 +123,17 @@ export default function TasksPage() {
 
   const handleUpdateTask = async (task: Task) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
       const response = await fetch(`http://localhost:5000/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         },
         body: JSON.stringify({
@@ -138,16 +144,21 @@ export default function TasksPage() {
           due_date: task.due_date
         }),
       });
+
+      const data = await response.text();
+      const responseData = data ? JSON.parse(data) : {};
+
       if (response.ok) {
         await fetchTasks();
       } else if (response.status === 401) {
         localStorage.removeItem('token');
         router.push('/login');
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'Failed to update task');
+        console.error('Failed to update task:', responseData.error);
+        alert(responseData.error || 'Failed to update task');
       }
     } catch (error) {
+      console.error('Error updating task:', error);
       alert('Failed to update task. Please try again.');
     }
   };
@@ -245,18 +256,18 @@ export default function TasksPage() {
         {/* Add Task Form */}
         {isAddingTask && (
           <div className="mb-8">
-            <div className="bg-gray-50/70 rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
               <div className="space-y-4">
                 <input
                   type="text"
                   placeholder="Task title"
-                  className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                 />
                 <textarea
                   placeholder="Task description (optional)"
-                  className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 />
@@ -265,7 +276,7 @@ export default function TasksPage() {
                     <FiCalendar className="text-gray-400" />
                     <input
                       type="date"
-                      className="flex-1 p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="flex-1 p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
                       value={newTask.due_date}
                       onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
                     />
@@ -273,7 +284,7 @@ export default function TasksPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">Priority:</span>
                     <select
-                      className="p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 text-gray-600 transition-all duration-200"
                       value={newTask.priority}
                       onChange={(e) => setNewTask({ ...newTask, priority: parseInt(e.target.value) })}
                     >
@@ -324,9 +335,9 @@ export default function TasksPage() {
                          ${task.completed 
                            ? 'bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300 hover:scale-[0.99]' 
                            : task.priority === 3
-                           ? 'bg-red-50/70 border border-red-100 hover:bg-red-100 hover:border-red-200 hover:scale-[1.01]'
+                           ? 'bg-red-200/70 border border-red-100 hover:bg-red-100 hover:border-red-200 hover:scale-[1.01]'
                            : task.priority === 2
-                           ? 'bg-yellow-50/70 border border-yellow-100 hover:bg-yellow-100 hover:border-yellow-200 hover:scale-[1.01]'
+                           ? 'bg-yellow-200/70 border border-yellow-100 hover:bg-yellow-100 hover:border-yellow-200 hover:scale-[1.01]'
                            : 'bg-gray-50/70 border border-gray-100 hover:bg-gray-100 hover:border-gray-200 hover:scale-[1.01]'}`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -346,16 +357,16 @@ export default function TasksPage() {
                     )}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-lg font-medium transition-all duration-300 ${task.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                    <h3 className={`text-lg font-medium transition-all duration-300 ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                       {task.title}
                     </h3>
                     {task.description && (
-                      <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-gray-500'}`}>
                         {task.description}
                       </p>
                     )}
                     {task.due_date && (
-                      <div className={`mt-2 flex items-center text-sm ${task.completed ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className={`mt-2 flex items-center text-sm ${task.completed ? 'text-gray-400' : 'text-gray-400'}`}>
                         <FiCalendar className="mr-1.5 h-4 w-4" />
                         {new Date(task.due_date).toLocaleDateString()}
                       </div>
@@ -386,19 +397,19 @@ export default function TasksPage() {
         {/* Edit Task Modal */}
         {editingTask && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 m-4">
+            <div className="bg-white rounded-2xl shadow-sm border p-6 m-4">
               <h2 className="text-2xl font-bold mb-6">Edit Task</h2>
               <div className="space-y-4">
                 <input
                   type="text"
                   placeholder="Task title"
-                  className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
                   value={editingTask.title}
                   onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
                 />
                 <textarea
                   placeholder="Task description (optional)"
-                  className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
                   value={editingTask.description}
                   onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
                 />
@@ -407,7 +418,7 @@ export default function TasksPage() {
                     <FiCalendar className="text-gray-400" />
                     <input
                       type="date"
-                      className="flex-1 p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="flex-1 p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
                       value={editingTask.due_date ? editingTask.due_date.split('T')[0] : ''}
                       onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
                     />
@@ -415,7 +426,7 @@ export default function TasksPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">Priority:</span>
                     <select
-                      className="p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 text-gray-600 transition-all duration-200"
                       value={editingTask.priority}
                       onChange={(e) => setEditingTask({ ...editingTask, priority: parseInt(e.target.value) })}
                     >
@@ -425,14 +436,24 @@ export default function TasksPage() {
                     </select>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editingTask.completed}
-                    onChange={(e) => setEditingTask({ ...editingTask, completed: e.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/20"
-                  />
-                  <label className="text-sm text-gray-700">Mark as completed</label>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setEditingTask({ ...editingTask, completed: !editingTask.completed })}
+                    className={`p-2 rounded-full transition-all duration-300 ease-in-out transform hover:scale-110
+                      ${editingTask.completed 
+                        ? 'text-green-600 hover:bg-green-50' 
+                        : 'text-gray-400 hover:text-green-600 hover:bg-gray-50'}`}
+                    title={editingTask.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                  >
+                    {editingTask.completed ? (
+                      <FiCheckCircle className="h-5 w-5" />
+                    ) : (
+                      <FiCircle className="h-5 w-5" />
+                    )}
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    {editingTask.completed ? 'Completed' : 'Mark as complete'}
+                  </span>
                 </div>
                 <div className="flex justify-end gap-2 mt-6">
                   <button

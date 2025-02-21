@@ -132,10 +132,13 @@ def create_task():
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 @bp.route('/<int:task_id>', methods=['PUT', 'PATCH', 'OPTIONS'])
-@jwt_required()
+@jwt_required(optional=True)
 def update_task(task_id):
     if request.method == 'OPTIONS':
-        return '', 200
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Methods', 'PUT, PATCH, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        return response
         
 
     
@@ -195,25 +198,20 @@ def update_task(task_id):
                         return jsonify({"error": "Invalid due date format"}), 400
             
             # Save changes
-            db.session.commit()
-            return jsonify(task.to_dict()), 200
+            try:
+                db.session.commit()
+                current_app.logger.info(f'Successfully updated task {task_id}')
+                return jsonify(task.to_dict()), 200
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f'Database error while updating task: {str(e)}\nTraceback: {traceback.format_exc()}')
+                return jsonify({"error": "Failed to save task updates"}), 500
             
         except ValueError as e:
             return jsonify({"error": "Invalid value provided"}), 400
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": "Failed to update task"}), 500
-        
-        try:
-            db.session.commit()
-            current_app.logger.info(f'Successfully updated task {task_id}')
-            
-            return jsonify(task.to_dict()), 200
-            
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f'Database error while updating task: {str(e)}\nTraceback: {traceback.format_exc()}')
-            return jsonify({"error": "Failed to save task updates"}), 500
             
     except JWTExtendedException as e:
         return jsonify({"error": "Authentication failed. Please log in again."}), 401

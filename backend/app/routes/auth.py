@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, abort
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from app import db
@@ -31,8 +31,7 @@ def register():
         not re.search(r'[0-9]', password) or 
         not re.search(r'[@$!%*?&]', password)
         ):
-            return jsonify({"error": "Password format is incorrect, please include a special character, an upper and lowercase letter and must be more then 8 characters long."}), 
-        abort(400, description="Password format is incorrect, please include a special character, an upper and lowercase letter and must be more then 8 characters long.")
+            return abort(400, description="Password format is incorrect, please include a special character, an upper and lowercase letter and must be more then 8 characters long.")
             
         # Check if user already exists
         if User.query.filter_by(username=data['username']).first():

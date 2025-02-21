@@ -17,15 +17,15 @@ def create_app(config_name='default'):
     
     # Configure CORS
     CORS(app, resources={
-        r"/api/*": {
-            "origins": ["http://localhost:3002"],
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "Accept"],
-            "expose_headers": ["Content-Type", "Authorization"],
+        r"/*": {
+            "origins": app.config['CORS_ORIGINS'],
+            "methods": app.config['CORS_METHODS'],
+            "allow_headers": app.config['CORS_ALLOW_HEADERS'],
             "supports_credentials": True,
-            "max_age": 3600
+            "send_wildcard": False,
+            "expose_headers": ['Content-Range', 'X-Content-Range']
         }
-    }, supports_credentials=True)
+    })
     
     # JWT error handlers
     @jwt.expired_token_loader
