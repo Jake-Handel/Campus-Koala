@@ -338,7 +338,7 @@ export default function TasksPage() {
                            ? 'bg-red-200/70 border border-red-100 hover:bg-red-100 hover:border-red-200 hover:scale-[1.01]'
                            : task.priority === 2
                            ? 'bg-yellow-200/70 border border-yellow-100 hover:bg-yellow-100 hover:border-yellow-200 hover:scale-[1.01]'
-                           : 'bg-gray-50/70 border border-gray-100 hover:bg-gray-100 hover:border-gray-200 hover:scale-[1.01]'}`}
+                           : 'bg-gray-200/70 border border-gray-200 hover:bg-gray-200 hover:border-gray-200 hover:scale-[1.01]'}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">

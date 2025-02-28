@@ -29,33 +29,16 @@ const CalendarComponent = dynamic(
 // Event interface is imported from './types'
 
 const eventCategories = [
-  { name: 'Study', color: '#4338CA' },  // Indigo-700 for better contrast
-  { name: 'Exam', color: '#DC2626' },    // Red-600 kept for urgency
-  { name: 'Assignment', color: '#2563EB' }, // Blue-600 for better visibility
-  { name: 'Meeting', color: '#059669' },   // Emerald-600 for softer meetings
-  { name: 'Other', color: '#6B7280' },    // Gray-500 for better contrast
+  { name: 'Study', color: 'rgba(63, 136, 197, 0.7)' },    // Blue
+  { name: 'Exam', color: 'rgba(255, 59, 48, 0.7)' },     // Red
+  { name: 'Assignment', color: 'rgba(88, 86, 214, 0.7)' }, // Purple
+  { name: 'Meeting', color: 'rgba(52, 199, 89, 0.7)' },   // Green
+  { name: 'Other', color: 'rgba(255, 149, 0, 0.7)' },     // Orange
 ];
 
 export default function CalendarPage(): ReactElement {
   const router = useRouter();
-  const [events, setEvents] = useState<Event[]>([{
-    id: '1',
-    title: 'Sample Study Session',
-    start: new Date(2025, 1, 20, 10, 0), // February 20, 2025, 10:00 AM
-    end: new Date(2025, 1, 20, 12, 0),   // February 20, 2025, 12:00 PM
-    category: 'Study',
-    color: '#4338CA',
-    description: 'Math study session'
-  },
-  {
-    id: '2',
-    title: 'Assignment Due',
-    start: new Date(2025, 1, 22),        // February 22, 2025
-    end: new Date(2025, 1, 22),
-    category: 'Assignment',
-    color: '#2563EB',
-    description: 'Physics Assignment'
-  }]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -63,13 +46,15 @@ export default function CalendarPage(): ReactElement {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
+
   const [newEvent, setNewEvent] = useState<NewEvent>({
     title: '',
     start: '',
     end: '',
     location: '',
     category: 'Other',
-    color: eventCategories.find(cat => cat.name === 'Other')?.color || '#6B7280',
+    color: eventCategories.find(cat => cat.name === 'Other')?.color || '#FF9500',
     description: '',
   });
 
@@ -108,7 +93,8 @@ export default function CalendarPage(): ReactElement {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
@@ -118,7 +104,7 @@ export default function CalendarPage(): ReactElement {
         start: new Date(event.start_time),
         end: new Date(event.end_time),
         color: eventCategories.find(cat => cat.name === event.category)?.color,
-        className: `event-${event.category.toLowerCase()} shadow-sm hover:shadow-lg rounded-lg transition-all duration-300 ease-in-out`
+        className: `event-${event.category.toLowerCase()}`
       }));
       setEvents(processedEvents);
     } catch (err) {
@@ -146,13 +132,14 @@ export default function CalendarPage(): ReactElement {
         router.push('/login');
         return;
       }
-      const response = await fetch(`http://localhost:5000/api/calendar/${selectedEvent.id}/`, {
+      const response = await fetch(`http://localhost:5000/api/calendar/${selectedEvent.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: selectedEvent.title,
           description: selectedEvent.description,
@@ -172,7 +159,7 @@ export default function CalendarPage(): ReactElement {
         start: new Date(data.start_time),
         end: new Date(data.end_time),
         color: eventCategories.find(cat => cat.name === data.category)?.color,
-        className: `event-${data.category.toLowerCase()} shadow-sm hover:shadow-md transition-shadow duration-200`
+        className: `event-${data.category.toLowerCase()}`
       } : e));
       
       setIsEditOpen(false);
@@ -199,18 +186,19 @@ export default function CalendarPage(): ReactElement {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/calendar/${selectedEvent.id}/`, {
+      const response = await fetch(`http://localhost:5000/api/calendar/${selectedEvent.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+        credentials: 'include'
       });
-      
+
       if (!response.ok) throw new Error('Failed to delete event');
-      
-      setEvents(events.filter(e => e.id !== selectedEvent.id));
+
+      setEvents(events.filter(event => event.id !== selectedEvent.id));
       setIsDeleteOpen(false);
       setIsEditOpen(false);
       setSelectedEvent(null);
@@ -268,7 +256,7 @@ export default function CalendarPage(): ReactElement {
         start: new Date(newEventData.start_time),
         end: new Date(newEventData.end_time),
         color: eventCategories.find(cat => cat.name === newEventData.category)?.color,
-        className: `event-${newEventData.category.toLowerCase()} shadow-sm hover:shadow-lg rounded-lg transition-all duration-300 ease-in-out`
+        className: `event-${newEventData.category.toLowerCase()}`
       }]);
       
       setIsCreateOpen(false);
@@ -278,7 +266,7 @@ export default function CalendarPage(): ReactElement {
         end: '',
         location: '',
         category: 'Other',
-        color: eventCategories.find(cat => cat.name === 'Other')?.color || '#6B7280',
+        color: eventCategories.find(cat => cat.name === 'Other')?.color || '#FF9500',
         description: ''
       });
     } catch (err) {
@@ -301,14 +289,9 @@ export default function CalendarPage(): ReactElement {
       >
         <div className="relative w-full max-w-6xl mx-auto px-4">
           <div className="flex flex-col items-center mb-6">
-            <h1 className="text-4xl font-bold text-emerald-600 bg-clip-text text-transparent text-center">
+            <h1 className="text-4xl font-bold text-emerald-600 bg-clip-text text-center">
               Calendar
             </h1>
-            <div className="mt-3 inline-flex items-center px-4 py-2.5 rounded-full bg-emerald-90 dark:bg-emerald-300/20 border border-emerald-100 dark:border-emerald-800 shadow-sm">
-              <span className="text-base text-emerald-700 dark:text-emerald-600 font-medium">
-                {isLoading ? "Loading..." : `${events.length} ${events.length === 1 ? 'Event' : 'Events'}`}
-              </span>
-            </div>
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
@@ -345,38 +328,45 @@ export default function CalendarPage(): ReactElement {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-[520px] shadow-2xl border border-gray-100 dark:border-gray-700"
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-3xl w-[90vw] max-w-[540px] shadow-2xl border border-gray-100/10 dark:border-gray-700/50"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Event</h2>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-emerald-500 bg-clip-text">Edit Event</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Update event details</p>
+                </div>
                 <button
                   onClick={() => setIsEditOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Title</label>
+              
+              <div className="space-y-6">
+                <div className="group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Title</label>
                   <input
                     type="text"
                     value={selectedEvent.title}
                     onChange={(e) => setSelectedEvent({ ...selectedEvent, title: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
+                    className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                    placeholder="Enter a descriptive title"
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Category</label>
+                  <div className="group">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Category</label>
                     <select
                       value={selectedEvent.category || 'Other'}
                       onChange={(e) => setSelectedEvent({
@@ -384,186 +374,126 @@ export default function CalendarPage(): ReactElement {
                         category: e.target.value,
                         color: eventCategories.find(cat => cat.name === e.target.value)?.color
                       })}
-                      className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
+                      className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
                     >
                       {eventCategories.map((category) => (
                         <option key={category.name} value={category.name}>{category.name}</option>
                       ))}
                     </select>
                   </div>
+
+                  <div className="group">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Location</label>
+                    <input
+                      type="text"
+                      value={selectedEvent.location || ''}
+                      onChange={(e) => setSelectedEvent({ ...selectedEvent, location: e.target.value })}
+                      className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      placeholder="Add location"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Start Time</label>
-                  <input
-                    type="datetime-local"
-                    value={moment(selectedEvent.start).format('YYYY-MM-DDTHH:mm')}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, start: new Date(e.target.value) })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Start Date</label>
+                      <input
+                        type="date"
+                        value={moment(selectedEvent.start).format('YYYY-MM-DD')}
+                        onChange={(e) => {
+                          const currentTime = moment(selectedEvent.start).format('HH:mm');
+                          setSelectedEvent({ ...selectedEvent, start: new Date(`${e.target.value}T${currentTime}`) });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Start Time</label>
+                      <input
+                        type="time"
+                        value={moment(selectedEvent.start).format('HH:mm')}
+                        onChange={(e) => {
+                          const currentDate = moment(selectedEvent.start).format('YYYY-MM-DD');
+                          setSelectedEvent({ ...selectedEvent, start: new Date(`${currentDate}T${e.target.value}`) });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">End Date</label>
+                      <input
+                        type="date"
+                        value={moment(selectedEvent.end).format('YYYY-MM-DD')}
+                        min={moment(selectedEvent.start).format('YYYY-MM-DD')}
+                        onChange={(e) => {
+                          const currentTime = moment(selectedEvent.end).format('HH:mm');
+                          setSelectedEvent({ ...selectedEvent, end: new Date(`${e.target.value}T${currentTime}`) });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">End Time</label>
+                      <input
+                        type="time"
+                        value={moment(selectedEvent.end).format('HH:mm')}
+                        onChange={(e) => {
+                          const currentDate = moment(selectedEvent.end).format('YYYY-MM-DD');
+                          setSelectedEvent({ ...selectedEvent, end: new Date(`${currentDate}T${e.target.value}`) });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">End Time</label>
-                  <input
-                    type="datetime-local"
-                    value={moment(selectedEvent.end).format('YYYY-MM-DDTHH:mm')}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, end: new Date(e.target.value) })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Location</label>
-                  <input
-                    type="text"
-                    value={selectedEvent.location || ''}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, location: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    placeholder="Enter location (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Description</label>
+
+                <div className="group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Description</label>
                   <textarea
                     value={selectedEvent.description || ''}
                     onChange={(e) => setSelectedEvent({ ...selectedEvent, description: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
+                    className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200 resize-none"
                     rows={3}
-                    placeholder="Add event description (optional)"
+                    placeholder="Add additional details about your event"
                   />
                 </div>
-                <div className="flex justify-end gap-3 mt-8">
-                  <button
-                    onClick={() => setIsEditOpen(false)}
-                    className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleUpdateEvent}
-                    className="px-5 py-2.5 text-white text-emerald-600 hover:from-emerald-500 hover:to-emerald-400 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Create Event Modal */}
-      <AnimatePresence>
-        {isCreateOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-[520px] shadow-2xl border border-gray-100 dark:border-gray-700"
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Event</h2>
-                <button
-                  onClick={() => setIsCreateOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Title</label>
-                  <input
-                    type="text"
-                    value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    placeholder="Enter event title"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Category</label>
-                    <select
-                      value={newEvent.category || 'Other'}
-                      onChange={(e) => setNewEvent({
-                        ...newEvent,
-                        category: e.target.value,
-                        color: eventCategories.find(cat => cat.name === e.target.value)?.color
-                      })}
-                      className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700/50">
+                  <button
+                    onClick={() => setIsDeleteOpen(true)}
+                    className="px-5 py-2.5 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all duration-200 font-medium flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Event
+                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setIsEditOpen(false)}
+                      className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
                     >
-                      {eventCategories.map((category) => (
-                        <option key={category.name} value={category.name}>{category.name}</option>
-                      ))}
-                    </select>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateEvent}
+                      className="px-5 py-2.5 text-white bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95"
+                    >
+                      Save Changes
+                    </button>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Start Time</label>
-                  <input
-                    type="datetime-local"
-                    value={moment(newEvent.start).format('YYYY-MM-DDTHH:mm')}
-                    onChange={(e) => setNewEvent({ ...newEvent, start: new Date(e.target.value) })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">End Time</label>
-                  <input
-                    type="datetime-local"
-                    value={moment(newEvent.end).format('YYYY-MM-DDTHH:mm')}
-                    onChange={(e) => setNewEvent({ ...newEvent, end: new Date(e.target.value) })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Location</label>
-                  <input
-                    type="text"
-                    value={newEvent.location || ''}
-                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    placeholder="Enter location (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Description</label>
-                  <textarea
-                    value={newEvent.description || ''}
-                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    rows={3}
-                    placeholder="Add event description (optional)"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-8">
-                  <button
-                    onClick={() => setIsCreateOpen(false)}
-                    className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateEvent}
-                    className="px-5 py-2.5 text-white text-emerald-600 hover:from-emerald-500 hover:to-emerald-400 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95"
-                  >
-                    Create Event
-                  </button>
-                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-         {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {isDeleteOpen && selectedEvent && (
           <motion.div
@@ -613,207 +543,144 @@ export default function CalendarPage(): ReactElement {
         )}
       </AnimatePresence>
 
-      {/* Edit Event Modal */}
-      <AnimatePresence>
-        {isEditOpen && selectedEvent && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-[520px] shadow-2xl border border-gray-100 dark:border-gray-700"
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Event</h2>
-                <button
-                  onClick={() => setIsEditOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Title</label>
-                  <input
-                    type="text"
-                    value={selectedEvent.title}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, title: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Category</label>
-                    <select
-                      value={selectedEvent.category || 'Other'}
-                      onChange={(e) => setSelectedEvent({
-                        ...selectedEvent,
-                        category: e.target.value,
-                        color: eventCategories.find(cat => cat.name === e.target.value)?.color
-                      })}
-                      className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    >
-                      {eventCategories.map((category) => (
-                        <option key={category.name} value={category.name}>{category.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Start Time</label>
-                  <input
-                    type="datetime-local"
-                    value={moment(selectedEvent.start).format('YYYY-MM-DDTHH:mm')}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, start: new Date(e.target.value) })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">End Time</label>
-                  <input
-                    type="datetime-local"
-                    value={moment(selectedEvent.end).format('YYYY-MM-DDTHH:mm')}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, end: new Date(e.target.value) })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Location</label>
-                  <input
-                    type="text"
-                    value={selectedEvent.location || ''}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, location: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    placeholder="Enter location (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Description</label>
-                  <textarea
-                    value={selectedEvent.description || ''}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, description: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    rows={3}
-                    placeholder="Add event description (optional)"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-8">
-                  <button
-                    onClick={() => setIsEditOpen(false)}
-                    className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleUpdateEvent}
-                    className="px-5 py-2.5 text-white text-emerald-600 hover:from-emerald-500 hover:to-emerald-400 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* Create Event Modal */}
       <AnimatePresence>
         {isCreateOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-[520px] shadow-2xl border border-gray-100 dark:border-gray-700"
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-3xl w-[90vw] max-w-[540px] shadow-2xl border border-gray-100/10 dark:border-gray-700/50"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-emerald-b bg-clip-text text-transparent">Create Event</h2>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-emerald-500 bg-clip-text">Create Event</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Fill in the details below</p>
+                </div>
                 <button
                   onClick={() => setIsCreateOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Title</label>
+              
+              <div className="space-y-6">
+                <div className="group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Title</label>
                   <input
                     type="text"
                     value={newEvent.title}
                     onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    placeholder="Enter event title"
+                    className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                    placeholder="Enter a descriptive title"
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Category</label>
+                  <div className="group">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Category</label>
                     <select
                       value={newEvent.category}
                       onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}
-                      className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
+                      className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
                     >
                       {eventCategories.map((category) => (
                         <option key={category.name} value={category.name}>{category.name}</option>
                       ))}
                     </select>
                   </div>
+
+                  <div className="group">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Location</label>
+                    <input
+                      type="text"
+                      value={newEvent.location}
+                      onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                      className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      placeholder="Add location"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Start Time</label>
-                  <input
-                    type="datetime-local"
-                    value={newEvent.start}
-                    onChange={(e) => setNewEvent({ ...newEvent, start: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Start Date</label>
+                      <input
+                        type="date"
+                        value={newEvent.start.split('T')[0]}
+                        onChange={(e) => {
+                          const currentTime = newEvent.start.split('T')[1] || '00:00';
+                          setNewEvent({ ...newEvent, start: `${e.target.value}T${currentTime}` });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Start Time</label>
+                      <input
+                        type="time"
+                        value={newEvent.start.split('T')[1] || ''}
+                        onChange={(e) => {
+                          const currentDate = newEvent.start.split('T')[0];
+                          setNewEvent({ ...newEvent, start: `${currentDate}T${e.target.value}` });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">End Date</label>
+                      <input
+                        type="date"
+                        value={newEvent.end.split('T')[0]}
+                        min={newEvent.start.split('T')[0]}
+                        onChange={(e) => {
+                          const currentTime = newEvent.end.split('T')[1] || '00:00';
+                          setNewEvent({ ...newEvent, end: `${e.target.value}T${currentTime}` });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">End Time</label>
+                      <input
+                        type="time"
+                        value={newEvent.end.split('T')[1] || ''}
+                        onChange={(e) => {
+                          const currentDate = newEvent.end.split('T')[0];
+                          setNewEvent({ ...newEvent, end: `${currentDate}T${e.target.value}` });
+                        }}
+                        className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">End Time</label>
-                  <input
-                    type="datetime-local"
-                    value={newEvent.end}
-                    onChange={(e) => setNewEvent({ ...newEvent, end: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Location</label>
-                  <input
-                    type="text"
-                    value={newEvent.location}
-                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
-                    placeholder="Enter location (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Description</label>
+
+                <div className="group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 group-focus-within:text-emerald-500 transition-colors">Description</label>
                   <textarea
                     value={newEvent.description}
                     onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-gray-50/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 placeholder-gray-400 transition-all duration-200"
+                    className="w-full p-3.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 placeholder-gray-400 text-gray-700 dark:text-gray-200 transition-all duration-200 resize-none"
                     rows={3}
-                    placeholder="Add event description (optional)"
+                    placeholder="Add additional details about your event"
                   />
                 </div>
-                <div className="flex justify-end gap-3 mt-8">
+
+                <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100 dark:border-gray-700/50">
                   <button
                     onClick={() => setIsCreateOpen(false)}
                     className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
@@ -823,7 +690,7 @@ export default function CalendarPage(): ReactElement {
                   <button
                     onClick={handleCreateEvent}
                     disabled={isLoading}
-                    className="px-5 py-2.5 text-white text-emerald-600 hover:from-emerald-500 hover:to-emerald-400 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-6 py-2.5 text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl transition-all duration-200 font-medium shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-lg flex items-center gap-2"
                   >
                     {isLoading ? (
                       <>
@@ -850,11 +717,57 @@ export default function CalendarPage(): ReactElement {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>Create</span>
+                        <span>Create Event</span>
                       </>
                     )}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        {/* Delete Confirmation Modal */}
+        {isDeleteOpen && selectedEvent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-[400px] shadow-2xl border border-gray-100 dark:border-gray-700"
+            >
+              <div className="flex items-center gap-3 mb-4 text-red-600 dark:text-red-500">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 className="text-lg font-semibold">Delete Event</h3>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Are you sure you want to delete <span className="font-medium text-gray-900 dark:text-white">{selectedEvent.title}</span>? This action cannot be undone.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setIsDeleteOpen(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteEvent}
+                  className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Event
+                </button>
               </div>
             </motion.div>
           </motion.div>
