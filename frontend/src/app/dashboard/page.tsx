@@ -123,7 +123,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
+    <div className="min-h-screen p-6">
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-indigo-600">Dashboard</h1>
