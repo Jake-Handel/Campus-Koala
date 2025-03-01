@@ -33,6 +33,7 @@ const eventCategories = [
   { name: 'Exam', color: 'rgba(255, 59, 48, 0.7)' },     // Red
   { name: 'Assignment', color: 'rgba(88, 86, 214, 0.7)' }, // Purple
   { name: 'Meeting', color: 'rgba(52, 199, 89, 0.7)' },   // Green
+  { name: 'Todo', color: 'rgba(175, 82, 222, 0.7)' },     // Pink/Purple
   { name: 'Other', color: 'rgba(255, 149, 0, 0.7)' },     // Orange
 ];
 
@@ -98,14 +99,19 @@ export default function CalendarPage(): ReactElement {
       });
       if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
-      const processedEvents = data.map((event: any) => ({
-        ...event,
-        id: event.id.toString(),
-        start: new Date(event.start_time),
-        end: new Date(event.end_time),
-        color: eventCategories.find(cat => cat.name === event.category)?.color,
-        className: `event-${event.category.toLowerCase()}`
-      }));
+      const processedEvents = data.map((event: any) => {
+        // Find the category color or use a default if not found
+        const categoryColor = eventCategories.find(cat => cat.name === event.category)?.color || 'rgba(128, 128, 128, 0.7)';
+        
+        return {
+          ...event,
+          id: event.id.toString(),
+          start: new Date(event.start_time),
+          end: new Date(event.end_time),
+          color: categoryColor,
+          className: `event-${(event.category || 'other').toLowerCase()}`
+        };
+      });
       setEvents(processedEvents);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch events';

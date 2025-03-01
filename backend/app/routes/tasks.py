@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify, make_response, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request, get_jwt
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, JWTExtendedException
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.models.task import Task
 from app.models.user import User
+from app.models.calendar_event import CalendarEvent
 from app import db
 import traceback
 import json
@@ -109,14 +110,36 @@ def create_task():
                 priority=int(data.get('priority', 1))
             )
 
-            if 'due_date' in data:
+            if 'due_date' in data and data['due_date']:
                 try:
                     task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                    
+                    # Create a calendar event for this task
+                    calendar_event = CalendarEvent(
+                        title=task.title,
+                        description=task.description,
+                        start_time=task.due_date,
+                        end_time=task.due_date + timedelta(hours=1),  # Default 1 hour duration
+                        user_id=current_user.id,
+                        category="Todo",  # Special category for todo items
+                        location=""
+                    )
+                    db.session.add(calendar_event)
+                    db.session.flush()  # Get the calendar_event.id before commit
+                    task.calendar_event_id = calendar_event.id
+                    
                 except ValueError:
                     return jsonify({"error": "Invalid due date format"}), 400
+            elif 'due_date' in data and not data['due_date']:
+                # If due_date is provided but empty, set it to None
+                task.due_date = None
 
             db.session.add(task)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({"error": f"Database error: {str(e)}"}), 500
             
 
             return jsonify(task.to_dict()), 201
@@ -174,11 +197,56 @@ def update_task(task_id):
                     task.description = data.get('description', '').strip()
                 if 'priority' in data:
                     task.priority = int(data['priority'])
-                if 'due_date' in data:
+                if 'due_date' in data and data['due_date']:
                     try:
                         task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                        
+                        # Update existing calendar event or create a new one
+                        if task.calendar_event_id:
+                            calendar_event = CalendarEvent.query.get(task.calendar_event_id)
+                            if calendar_event:
+                                calendar_event.title = task.title
+                                calendar_event.description = task.description
+                                calendar_event.start_time = task.due_date
+                                calendar_event.end_time = task.due_date + timedelta(hours=1)
+                            else:
+                                # Create new calendar event if the linked one doesn't exist
+                                calendar_event = CalendarEvent(
+                                    title=task.title,
+                                    description=task.description,
+                                    start_time=task.due_date,
+                                    end_time=task.due_date + timedelta(hours=1),
+                                    user_id=current_user.id,
+                                    category="Todo",
+                                    location=""
+                                )
+                                db.session.add(calendar_event)
+                                db.session.flush()
+                                task.calendar_event_id = calendar_event.id
+                        else:
+                            # Create new calendar event
+                            calendar_event = CalendarEvent(
+                                title=task.title,
+                                description=task.description,
+                                start_time=task.due_date,
+                                end_time=task.due_date + timedelta(hours=1),
+                                user_id=current_user.id,
+                                category="Todo",
+                                location=""
+                            )
+                            db.session.add(calendar_event)
+                            db.session.flush()
+                            task.calendar_event_id = calendar_event.id
                     except ValueError:
                         return jsonify({"error": "Invalid due date format"}), 400
+                elif 'due_date' in data and not data['due_date']:
+                    # If due_date is provided but empty, set it to None and remove calendar event
+                    task.due_date = None
+                    if task.calendar_event_id:
+                        calendar_event = CalendarEvent.query.get(task.calendar_event_id)
+                        if calendar_event:
+                            db.session.delete(calendar_event)
+                        task.calendar_event_id = None
             else:  # PUT request
                 current_app.logger.debug(f'PUT request data: {data}')
                 # Validate required fields
@@ -191,11 +259,58 @@ def update_task(task_id):
                 task.completed = bool(data.get('completed', False))
                 task.priority = int(data.get('priority', 1))
                 
-                if 'due_date' in data:
+                # Task completion status is already set above
+                
+                if 'due_date' in data and data['due_date']:
                     try:
                         task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+                        
+                        # Update existing calendar event or create a new one
+                        if task.calendar_event_id:
+                            calendar_event = CalendarEvent.query.get(task.calendar_event_id)
+                            if calendar_event:
+                                calendar_event.title = task.title
+                                calendar_event.description = task.description
+                                calendar_event.start_time = task.due_date
+                                calendar_event.end_time = task.due_date + timedelta(hours=1)
+                            else:
+                                # Create new calendar event if the linked one doesn't exist
+                                calendar_event = CalendarEvent(
+                                    title=task.title,
+                                    description=task.description,
+                                    start_time=task.due_date,
+                                    end_time=task.due_date + timedelta(hours=1),
+                                    user_id=current_user.id,
+                                    category="Todo",
+                                    location=""
+                                )
+                                db.session.add(calendar_event)
+                                db.session.flush()
+                                task.calendar_event_id = calendar_event.id
+                        else:
+                            # Create new calendar event
+                            calendar_event = CalendarEvent(
+                                title=task.title,
+                                description=task.description,
+                                start_time=task.due_date,
+                                end_time=task.due_date + timedelta(hours=1),
+                                user_id=current_user.id,
+                                category="Todo",
+                                location=""
+                            )
+                            db.session.add(calendar_event)
+                            db.session.flush()
+                            task.calendar_event_id = calendar_event.id
                     except ValueError:
                         return jsonify({"error": "Invalid due date format"}), 400
+                elif 'due_date' in data and not data['due_date']:
+                    # If due_date is provided but empty, set it to None and remove calendar event
+                    task.due_date = None
+                    if task.calendar_event_id:
+                        calendar_event = CalendarEvent.query.get(task.calendar_event_id)
+                        if calendar_event:
+                            db.session.delete(calendar_event)
+                        task.calendar_event_id = None
             
             # Save changes
             try:
@@ -233,6 +348,11 @@ def delete_task(task_id):
         if not task:
             return jsonify({"error": "Task not found"}), 404
             
+        # Delete associated calendar event if it exists
+        if task.calendar_event_id:
+            calendar_event = CalendarEvent.query.get(task.calendar_event_id)
+            if calendar_event:
+                db.session.delete(calendar_event)
         
         db.session.delete(task)
         db.session.commit()

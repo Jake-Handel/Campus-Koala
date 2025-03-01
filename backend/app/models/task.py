@@ -5,7 +5,7 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    due_date = db.Column(db.DateTime)
+    due_date = db.Column(db.DateTime, nullable=True)
     completed = db.Column(db.Boolean, default=False)
     priority = db.Column(db.Integer, default=1)  # 1: Low, 2: Medium, 3: High
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

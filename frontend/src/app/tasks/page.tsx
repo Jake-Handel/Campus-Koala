@@ -69,6 +69,15 @@ export default function TasksPage() {
         return;
       }
 
+      // Create a clean task object for submission
+      const taskToSubmit = {
+        title: newTask.title.trim(),
+        description: newTask.description?.trim() || '',
+        priority: newTask.priority,
+        // Only include due_date if it's not empty
+        ...(newTask.due_date ? { due_date: newTask.due_date } : {})
+      };
+
       const response = await fetch('http://localhost:5000/api/tasks', {
         method: 'POST',
         headers: {
@@ -76,7 +85,7 @@ export default function TasksPage() {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         },
-        body: JSON.stringify(newTask),
+        body: JSON.stringify(taskToSubmit),
       });
 
       const responseText = await response.text();
@@ -129,6 +138,16 @@ export default function TasksPage() {
         return;
       }
 
+      // Create a clean task object for update
+      const taskToUpdate = {
+        title: task.title.trim(),
+        description: task.description?.trim() || '',
+        priority: task.priority,
+        completed: task.completed,
+        // Only include due_date if it's not empty
+        ...(task.due_date ? { due_date: task.due_date } : { due_date: null })
+      };
+
       const response = await fetch(`http://localhost:5000/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: {
@@ -136,13 +155,7 @@ export default function TasksPage() {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          completed: task.completed,
-          due_date: task.due_date
-        }),
+        body: JSON.stringify(taskToUpdate),
       });
 
       const data = await response.text();
