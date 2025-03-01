@@ -27,13 +27,22 @@ const EventComponent = ({ event }: { event: Event }) => {
     ? 'All Day'
     : `${moment(event.start).format('h:mm A')} - ${moment(event.end).format('h:mm A')}`;
 
+  // Special handling for Todo events
+  const isTodoEvent = event.category === 'Todo';
+  const tooltipContent = isTodoEvent 
+    ? `Task Due: ${moment(event.start).format('h:mm A')}${event.description ? ` - ${event.description}` : ''}` 
+    : timeRange;
+
   return (
     <div
       data-tooltip-id="event-tooltip"
-      data-tooltip-content={timeRange}
-      className="cursor-pointer"
+      data-tooltip-content={tooltipContent}
+      className="cursor-pointer flex items-center rounded-sm px-1"
     >
-      <span className="font-medium text-xs">{event.title}</span>
+      {isTodoEvent && (
+        <span className="mr-1 text-xs">📋</span>
+      )}
+      <span className="font-medium text-xs truncate">{event.title}</span>
       {!event.allDay && (
         <span className="text-xs opacity-90 ml-1">{moment(event.start).format('h:mm A')}</span>
       )}
@@ -112,8 +121,11 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
   };
 
   const eventStyleGetter = (event: Event) => {
+    // Default color if none is specified
+    const backgroundColor = event.color || 'rgba(128, 128, 128, 0.7)';
+    
     const style = {
-      background: event.color,
+      background: backgroundColor,
       color: '#FFFFFF',
       padding: '2px 4px',
       margin: '0 0 1px 0',
@@ -121,13 +133,14 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
       lineHeight: '1.2',
       width: '100%',
       cursor: 'pointer',
-      border: 'none',
-      borderRadius: '0',
-      boxShadow: 'none',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      borderRadius: '2px',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
     };
+    
     return { 
       style,
-      className: 'hover:opacity-80 transition-opacity duration-200'
+      className: 'hover:opacity-80 transition-all duration-200 hover:translate-y-[-1px]'
     };
   };
 
@@ -148,6 +161,8 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
     // Calendar container
     wrapper: 'h-full',
     container: 'bg-transparent',
+    timeGutterHeader: 'text-center font-medium',
+    timeGutterWrapper: 'font-medium text-right pr-2',
     // Month view
     monthView: 'divide-y divide-gray-200/30 dark:divide-gray-700/30',
     // Header row
@@ -161,12 +176,12 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
     // Events
     event: 'truncate w-[80%] mx-auto block',
     // Navigation buttons
-    button: 'px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:bg-white dark:hover:bg-gray-700/50 transition-all duration-200 shadow-sm hover:shadow backdrop-blur-sm',
-    activeButton: 'bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:hover:bg-primary/90 shadow-md',
+    button: 'px-4 py-2 text-sm bg-emerald-600/90 text-white border-none rounded-lg hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow backdrop-blur-sm',
+    activeButton: 'bg-white text-emerald-600 border-white hover:bg-gray-100 shadow-md font-medium',
     // Toolbar
-    toolbar: 'flex justify-between items-center p-4 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm shadow-sm',
-    toolbarLabel: 'text-xl font-bold text-gray-800 dark:text-white',
-    currentMonth: 'text-2xl font-bold text-emerald-600 bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-400',
+    toolbar: 'flex justify-between items-center p-4 bg-gray-800 text-white rounded-t-lg shadow-sm',
+    toolbarLabel: 'text-xl font-bold text-white',
+    currentMonth: 'text-2xl font-bold text-emerald-600/90 bg-clip-text text-center',
     buttonGroup: 'flex gap-2',
     // Navigation icons
     navIcon: 'text-lg',
@@ -180,31 +195,26 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
           <div className={calendarClasses.buttonGroup}>
             <button
               onClick={() => handleNavigate('TODAY')}
-              className={twMerge(calendarClasses.button, "hover:bg-emerald-50 dark:hover:bg-emerald-900/20")}
+              className="px-4 py-2 text-sm bg-emerald-600/80 text-white font-medium rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm hover:shadow"
             >
               Today
             </button>
             <button
               onClick={() => handleNavigate('PREV')}
-              className={twMerge(calendarClasses.button, "hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-1")}
+              className="p-2 rounded-full bg-emerald-600/80 text-white hover:bg-emerald-700 transition-colors flex items-center justify-center"
             >
-              <FaChevronLeft className={calendarClasses.navIcon} />
-              <span className="hidden sm:inline">Back</span>
+              <FaChevronLeft className="text-lg" />
             </button>
             <button
               onClick={() => handleNavigate('NEXT')}
-              className={twMerge(calendarClasses.button, "hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-1")}
+              className="p-2 rounded-full bg-emerald-600/80 text-white hover:bg-emerald-700 transition-colors flex items-center justify-center"
             >
-              <span className="hidden sm:inline">Next</span>
-              <FaChevronRight className={calendarClasses.navIcon} />
+              <FaChevronRight className="text-lg" />
             </button>
           </div>
           <div className="flex flex-col items-center">
             <span className={calendarClasses.currentMonth}>
               {formatCurrentMonth()}
-            </span>
-            <span className={calendarClasses.toolbarLabel}>
-              {view.charAt(0).toUpperCase() + view.slice(1)} View
             </span>
           </div>
           <div className={calendarClasses.buttonGroup}>
@@ -304,84 +314,24 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
       className={twMerge("h-full w-full", className)}
     >
       <div className="calendar-modernized h-full">
-        <style jsx global>{`
-          /* Global styles for the calendar to make it more modern */
-          .calendar-modernized .rbc-calendar {
-            font-family: inherit;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            background: ${theme === 'dark' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.7)'};
-            backdrop-filter: blur(8px);
-          }
-          
-          /* Header styling */
-          .calendar-modernized .rbc-header {
-            padding: 12px 0;
+      <style jsx global>{`
+          /* Time gutter styling */
+          .rbc-time-gutter .rbc-timeslot-group .rbc-time-slot,
+          .rbc-time-gutter .rbc-label {
             font-weight: 600;
-            color: ${theme === 'dark' ? '#e2e8f0' : '#334155'};
-            background: ${theme === 'dark' ? 'rgba(30, 41, 59, 0.6)' : 'rgba(248, 250, 252, 0.8)'};
+            color: ${theme === 'dark' ? '#ffffff' : '#ffffff'};
+            font-size: 0.9rem;
+            text-align: center;
+            background-color: #212936; /* Green background for time cells */
           }
           
-          /* Time columns in week/day view */
-          .calendar-modernized .rbc-time-view .rbc-time-header,
-          .calendar-modernized .rbc-time-view .rbc-time-content {
-            border-color: ${theme === 'dark' ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'};
+          /* Time header styling */
+          .rbc-time-header-gutter {
+            font-weight: 600;
+            background-color: #212936;
+            color: white;
           }
-          
-          /* Time labels in week/day view */
-          .calendar-modernized .rbc-time-view .rbc-time-gutter {
-            font-weight: 500;
-            color: ${theme === 'dark' ? '#94a3b8' : '#64748b'};
-            padding-right: 10px;
-            text-align: right;
-            font-size: 0.85rem;
-          }
-          
-          /* Cells */
-          .calendar-modernized .rbc-month-view .rbc-day-bg {
-            transition: background-color 0.2s;
-          }
-          
-          /* Hover effect on day cells */
-          .calendar-modernized .rbc-month-view .rbc-day-bg:hover {
-            background-color: ${theme === 'dark' ? 'rgba(51, 65, 85, 0.3)' : 'rgba(241, 245, 249, 0.8)'};
-          }
-          
-          /* Today's cell */
-          .calendar-modernized .rbc-month-view .rbc-day-bg.rbc-today {
-            background-color: ${theme === 'dark' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(20, 184, 166, 0.08)'};
-          }
-          
-          /* Event styling */
-          .calendar-modernized .rbc-event {
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            font-size: 0.85rem;
-          }
-          
-          /* Agenda view improvements */
-          .calendar-modernized .rbc-agenda-view table.rbc-agenda-table {
-            border-radius: 8px;
-            overflow: hidden;
-            color: ${theme === 'dark' ? '#e2e8f0' : '#334155'};
-          }
-          
-          .calendar-modernized .rbc-agenda-view table.rbc-agenda-table thead {
-            background-color: ${theme === 'dark' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(248, 250, 252, 0.9)'};
-            color: ${theme === 'dark' ? '#e2e8f0' : '#334155'};
-          }
-          
-          .calendar-modernized .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
-            padding: 10px;
-            border-color: ${theme === 'dark' ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'};
-          }
-          
-          .calendar-modernized .rbc-agenda-view table.rbc-agenda-table tbody > tr:hover {
-            background-color: ${theme === 'dark' ? 'rgba(51, 65, 85, 0.3)' : 'rgba(241, 245, 249, 0.8)'};
-          }
-          
-          
+
         `}</style>
         <Calendar
           localizer={localizer}
@@ -401,6 +351,13 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
             month: true,
             week: true,
             day: true
+          }}
+          formats={{
+            timeGutterFormat: (date: Date) => moment(date).format('h:mm A'),
+            dayFormat: (date: Date) => moment(date).format('ddd D'),
+            eventTimeRangeFormat: ({ start, end }: { start: Date, end: Date }) => {
+              return `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`;
+            }
           }}
         />
       </div>
