@@ -13,7 +13,6 @@
     @apply bg-gradient-to-br from-indigo-50 via-sky-50 to-gray-50;
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     margin: 0;
-    padding: 20px;
     min-height: 100vh;
   }
 }

@@ -5,13 +5,15 @@ from flask_cors import CORS
 from config import config
 from flask_jwt_extended.exceptions import JWTExtendedException
 
-db = SQLAlchemy()
+# Initialize extensions without app
 jwt = JWTManager()
+db = SQLAlchemy()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
+    # Initialize extensions with app
     db.init_app(app)
     jwt.init_app(app)
     
@@ -66,11 +68,13 @@ def create_app(config_name='default'):
         from .routes.tasks import bp as tasks_bp
         from .routes.calendar import bp as calendar_bp
         from .routes.study import bp as study_bp
+        from .routes.ai_routes import gemini_bp
         
         app.register_blueprint(auth_bp)
         app.register_blueprint(tasks_bp)
         app.register_blueprint(calendar_bp)
         app.register_blueprint(study_bp)
+        app.register_blueprint(gemini_bp)
         
         # Create database tables if they don't exist
         db.create_all()

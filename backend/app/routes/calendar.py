@@ -20,7 +20,6 @@ def get_events():
         return '', 200
         
     try:
-        logger.debug('Attempting to fetch events')
         user_id = get_jwt_identity()
         if not user_id:
             return jsonify({'error': 'Authentication required'}), 401
@@ -34,15 +33,10 @@ def get_events():
         user = User.query.get(user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 401
-        logger.debug(f'Querying events for user_id: {user_id}')
         events = CalendarEvent.query.filter_by(user_id=user_id).all()
-        logger.debug(f'Found {len(events)} events')
         event_list = [event.to_dict() for event in events]
-        logger.debug('Successfully serialized events')
         return jsonify(event_list), 200
     except Exception as e:
-        logger.error(f'Error in get_events: {str(e)}')
-        logger.error(traceback.format_exc())
         return jsonify({'error': str(e), 'trace': traceback.format_exc()}), 500
 
 @bp.route('/', methods=['POST', 'OPTIONS'])
