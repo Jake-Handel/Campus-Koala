@@ -123,7 +123,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
+    <div className="min-h-screen p-6">
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-indigo-600">Dashboard</h1>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
               </button>
               
               <button 
-                onClick={() => router.push('/study-timer')} 
+                onClick={() => router.push('/planner')} 
                 className="group relative overflow-hidden rounded-lg p-3 border-none shadow-sm transition-all duration-300 text-white font-medium bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-600 hover:to-teal-500 hover:shadow-md transform hover:-translate-y-1"
               >
                 <div className="flex items-center">

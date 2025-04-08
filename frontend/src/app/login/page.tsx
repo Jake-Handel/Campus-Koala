@@ -40,7 +40,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="card w-full max-w-md p-6 space-y-6">
         <div className="card-header">
-          <h2 className="card-title text-center">Sign in to your account</h2>
+          <h2 className="py-4 card-title text-center">Sign in to your account</h2>
           <p className="card-description text-center">Enter your credentials to access your account</p>
         </div>
         {error && (

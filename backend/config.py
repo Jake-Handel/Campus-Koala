@@ -22,9 +22,11 @@ class Config:
     JWT_IDENTITY_CLAIM = 'sub'
     
     # CORS Configuration
-    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000']
-    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
-    CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000', 'http://localhost:5173']
+    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+    CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
+    CORS_SUPPORTS_CREDENTIALS = True
+    CORS_EXPOSE_HEADERS = ['Content-Range', 'X-Content-Range']
 
 class DevelopmentConfig(Config):
     DEBUG = True

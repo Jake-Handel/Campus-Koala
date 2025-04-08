@@ -10,7 +10,9 @@
     "backend": "cd ../backend && source venv/bin/activate && python app.py"
   },
   "dependencies": {
-    "framer-motion": "^12.4.4",
+    "@clerk/nextjs": "^6.12.12",
+    "@heroicons/react": "^2.2.0",
+    "framer-motion": "^12.6.3",
     "lucide-react": "^0.475.0",
     "next": "^14.0.4",
     "next-themes": "^0.4.4",

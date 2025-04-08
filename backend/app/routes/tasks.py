@@ -260,7 +260,6 @@ def update_task(task_id):
                 task.priority = int(data.get('priority', 1))
                 
                 # Task completion status is already set above
-                
                 if 'due_date' in data and data['due_date']:
                     try:
                         task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))

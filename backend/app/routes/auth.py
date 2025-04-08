@@ -98,8 +98,6 @@ def login():
             fresh=True
         )
         
-
-        
         response = jsonify({
             'access_token': access_token,
             'user': user.to_dict()
