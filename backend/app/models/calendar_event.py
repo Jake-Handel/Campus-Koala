@@ -17,13 +17,13 @@ class CalendarEvent(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'title': self.title or "Untitled Event",
+            'description': self.description or "",
+            'start': self.start_time.isoformat() if self.start_time else None,
+            'end': self.end_time.isoformat() if self.end_time else None,
             'user_id': self.user_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'category': self.category if hasattr(self, 'category') else None,
-            'location': self.location if hasattr(self, 'location') else None
+            'category': self.category or "Other",
+            'location': self.location or "",
         }
