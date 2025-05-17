@@ -91,6 +91,8 @@ export default function DashboardPage() {
         return;
       }
 
+      console.log('Making GET request to fetch events');
+      
       const response = await fetch('http://localhost:5000/api/calendar/', {
         method: 'GET',
         headers: {
@@ -101,6 +103,8 @@ export default function DashboardPage() {
         credentials: 'include'
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error fetching events:', errorData.error || 'Failed to fetch events');
@@ -108,7 +112,7 @@ export default function DashboardPage() {
       }
 
       const data = await response.json();
-      console.log('Fetched events:', data);
+      console.log('Raw events data:', data); // Log the raw data to debug
 
       // Define event categories with colors
       const eventCategories = [
@@ -119,21 +123,47 @@ export default function DashboardPage() {
         { name: 'Other', color: 'rgba(255, 149, 0, 0.7)' },
       ];
 
-      const processedEvents = data.map((event: any) => ({
-        ...event,
-        id: event.id.toString(),
-        start: new Date(event.start),
-        end: new Date(event.end),
-        color: eventCategories.find(cat => cat.name === event.category)?.color,
-      }));
+      // Add validation for the event data
+      const processedEvents = (data || []).map((event: any) => {
+        // Log the event data to debug
+        console.log('Processing event:', event);
+        
+        const processedEvent = {
+          id: event.id?.toString() || Date.now().toString(),
+          title: event.title || 'Untitled Event',
+          start: event.start ? new Date(event.start) : new Date(),
+          end: event.end ? new Date(event.end) : new Date(),
+          category: event.category || 'Other',
+          color: eventCategories.find(cat => cat.name === event.category)?.color,
+          allDay: event.allDay || false,
+          location: event.location,
+          description: event.description
+        };
 
+        // Validate dates
+        if (isNaN(processedEvent.start.getTime()) || isNaN(processedEvent.end.getTime())) {
+          console.warn('Invalid date for event:', event);
+          return null;
+        }
+
+        return processedEvent;
+      }).filter((event: any) => event !== null);
+
+      console.log('Processed events:', processedEvents); // Log processed events
       setEvents(processedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
+      // Set an empty array if there's an error
+      setEvents([]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    console.log('Component mounted, fetching events');
+    fetchEvents();
+  }, []); // Empty dependency array to run only on mount
 
   return (
     <div className="min-h-screen p-4">
