@@ -10,7 +10,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: FiHome },
   { href: '/tasks', label: 'To-Do List', icon: FiCheckSquare },
   { href: '/calendar', label: 'Calendar', icon: FiCalendar },
-  { href: '/study-timer', label: 'Study Timer', icon: FiClock },
+  { href: '/study-timer', label: 'FocusFlow', icon: FiClock },
 ];
 
 export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {

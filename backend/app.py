@@ -20,10 +20,36 @@ def init_database():
             
             # Add is_active column if it doesn't exist
             inspector = inspect(db.engine)
-            columns = [col['name'] for col in inspector.get_columns('ai_conversation')]
+            
+            # Check and add study_session columns if needed
+            try:
+                study_session_columns = [col['name'] for col in inspector.get_columns('study_session')]
+                required_columns = ['subject', 'notes', 'duration', 'updated_at']
+                
+                for column in required_columns:
+                    if column not in study_session_columns:
+                        # Handle timestamp columns specially
+                        if column == 'updated_at':
+                            column_def = text("ALTER TABLE study_session ADD COLUMN updated_at DATETIME")
+                        else:
+                            column_def = text(f"ALTER TABLE study_session ADD COLUMN {column} TEXT")
+                        try:
+                            with db.engine.connect() as conn:
+                                conn.execute(column_def)
+                                conn.commit()
+                                print(f"Added {column} column to study_session table")
+                        except Exception as e:
+                            print(f"Error adding {column} column: {str(e)}")
+                            conn.rollback()
+                            raise
+            except Exception as e:
+                print(f"Error checking study_session table: {str(e)}")
+                raise
             
             # Add is_active column if it doesn't exist
-            if 'is_active' not in columns:
+            ai_columns = [col['name'] for col in inspector.get_columns('ai_conversation')]
+            
+            if 'is_active' not in ai_columns:
                 column_def = text("ALTER TABLE ai_conversation ADD COLUMN is_active BOOLEAN DEFAULT TRUE")
                 try:
                     with db.engine.connect() as conn:
@@ -36,7 +62,7 @@ def init_database():
                     raise
             
             # Remove summary column if it exists
-            if 'summary' in columns:
+            if 'summary' in ai_columns:
                 column_def = text("ALTER TABLE ai_conversation DROP COLUMN summary")
                 try:
                     with db.engine.connect() as conn:

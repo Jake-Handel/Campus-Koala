@@ -1,102 +1,117 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
-from app.models import StudySession, User
-from app.utils import calculate_game_time
+from flask import Blueprint, request, jsonify, make_response, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request, get_jwt
+from datetime import datetime, timezone
+from app.models.study_session import StudySession
+from app.models.user import User
 from app import db
+import traceback
 
 bp = Blueprint('study', __name__, url_prefix='/api/study')
 
+def get_current_user():
+    """Helper function to get and validate current user"""
+    user_id = get_jwt_identity()
+    try:
+        user_id = int(user_id)
+    except (ValueError, TypeError):
+        return None
+    return user_id
+
+@bp.errorhandler(Exception)
+def handle_error(e):
+    current_app.logger.error(f"Error in study routes: {str(e)}")
+    current_app.logger.error(traceback.format_exc())
+    return jsonify({"error": "An unexpected error occurred"}), 500
+
 @bp.route('/sessions', methods=['GET'])
 @jwt_required()
-def get_sessions():
-    user_id = get_jwt_identity()
-    sessions = StudySession.query.filter_by(user_id=user_id).all()
-    return jsonify([session.to_dict() for session in sessions]), 200
+def get_study_sessions():
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "Invalid user"}), 401
 
-@bp.route('/start', methods=['POST'])
-@jwt_required()
-def start_session():
-    user_id = get_jwt_identity()
-    
-    # Check if there's already an active session
-    active_session = StudySession.query.filter_by(
-        user_id=user_id,
-        end_time=None
-    ).first()
-    
-    if active_session:
-        return jsonify({"error": "Active study session already exists"}), 400
-    
-    # Create new session
-    new_session = StudySession(
-        user_id=user_id,
-        start_time=datetime.utcnow()
-    )
-    
-    db.session.add(new_session)
-    db.session.commit()
-    
-    return jsonify(new_session.to_dict()), 201
+        sessions = StudySession.query.filter_by(user_id=user_id).order_by(StudySession.start_time.desc()).all()
+        return jsonify([session.to_dict() for session in sessions])
+    except Exception as e:
+        return handle_error(e)
 
-@bp.route('/end', methods=['POST'])
+@bp.route('/sessions', methods=['POST'])
 @jwt_required()
-def end_session():
-    user_id = get_jwt_identity()
-    
-    # Find active session
-    active_session = StudySession.query.filter_by(
-        user_id=user_id,
-        end_time=None
-    ).first()
-    
-    if not active_session:
-        return jsonify({"error": "No active study session found"}), 404
-    
-    # End session and calculate duration
-    end_time = datetime.utcnow()
-    duration = int((end_time - active_session.start_time).total_seconds() / 60)
-    game_time_earned = calculate_game_time(duration)
-    
-    # Update session
-    active_session.end_time = end_time
-    active_session.duration = duration
-    active_session.game_time_earned = game_time_earned
-    
-    # Update user's total study time and game time
-    user = User.query.get(user_id)
-    user.study_time += duration
-    user.game_time += game_time_earned
-    
-    db.session.commit()
-    
-    return jsonify({
-        "session": active_session.to_dict(),
-        "total_study_time": user.study_time,
-        "total_game_time": user.game_time
-    }), 200
+def create_study_session():
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "Invalid user"}), 401
 
-@bp.route('/stats', methods=['GET'])
+        data = request.get_json()
+        if not data or 'subject' not in data:
+            return jsonify({"error": "Subject is required"}), 400
+
+        session = StudySession(
+            user_id=user_id,
+            subject=data.get('subject'),
+            notes=data.get('notes'),
+            start_time=datetime.utcnow()
+        )
+        db.session.add(session)
+        db.session.commit()
+        return jsonify(session.to_dict()), 201
+    except Exception as e:
+        return handle_error(e)
+
+@bp.route('/sessions/<int:session_id>', methods=['PUT'])
 @jwt_required()
-def get_stats():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    
-    # Get all completed sessions
-    completed_sessions = StudySession.query.filter(
-        StudySession.user_id == user_id,
-        StudySession.end_time.isnot(None)
-    ).all()
-    
-    total_sessions = len(completed_sessions)
-    total_duration = sum(session.duration for session in completed_sessions)
-    total_game_time = sum(session.game_time_earned for session in completed_sessions)
-    
-    return jsonify({
-        "total_sessions": total_sessions,
-        "total_study_time": user.study_time,
-        "total_game_time": user.game_time,
-        "available_game_time": user.game_time,
-        "total_duration": total_duration,
-        "sessions": [session.to_dict() for session in completed_sessions]
-    }), 200
+def update_study_session(session_id):
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "Invalid user"}), 401
+
+        session = StudySession.query.filter_by(id=session_id, user_id=user_id).first()
+        if not session:
+            return jsonify({"error": "Study session not found"}), 404
+
+        data = request.get_json()
+        if 'end_time' in data:
+            # Make sure both times are timezone-aware
+            end_time = datetime.fromisoformat(data['end_time'])
+            if end_time.tzinfo is None:
+                end_time = end_time.replace(tzinfo=timezone.utc)
+            
+            session.end_time = end_time
+            
+            if session.start_time and session.end_time:
+                # Ensure start_time is timezone-aware
+                start_time = session.start_time
+                if start_time.tzinfo is None:
+                    start_time = start_time.replace(tzinfo=timezone.utc)
+                
+                # Calculate duration in minutes
+                duration_minutes = max(0, int((end_time - start_time).total_seconds() // 60))
+                session.duration = duration_minutes
+        if 'notes' in data:
+            session.notes = data['notes']
+
+        db.session.commit()
+        return jsonify(session.to_dict())
+    except Exception as e:
+        return handle_error(e)
+
+@bp.route('/sessions/<int:session_id>', methods=['DELETE'])
+@jwt_required()
+def delete_study_session(session_id):
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "Invalid user"}), 401
+
+        session = StudySession.query.filter_by(id=session_id, user_id=user_id).first()
+        if not session:
+            return jsonify({"error": "Study session not found"}), 404
+
+        db.session.delete(session)
+        db.session.commit()
+        return '', 204
+    except Exception as e:
+        return handle_error(e)

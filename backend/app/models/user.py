@@ -14,7 +14,7 @@ class User(db.Model):
     # Relationships
     tasks = db.relationship('Task', backref='user', lazy=True)
     calendar_events = db.relationship('CalendarEvent', backref='user', lazy=True)
-    study_sessions = db.relationship('StudySession', backref='user', lazy=True)
+    study_sessions = db.relationship('StudySession', back_populates='user', lazy=True)
     
     @staticmethod
     def generate_password_hash(password):
