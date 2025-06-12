@@ -25,9 +25,11 @@ class StudySession(db.Model):
             'user_id': self.user_id,
             'start_time': self.start_time.isoformat(),
             'end_time': self.end_time.isoformat() if self.end_time else None,
-            'duration': self.duration,  # Return as integer
+            'duration': self.duration,
             'subject': self.subject,
             'notes': self.notes,
             'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
+            'updated_at': self.updated_at.isoformat(),
+            'type': 'study',  # Add default type
+            'completed': self.end_time is not None  # Mark as completed if end_time exists
         }

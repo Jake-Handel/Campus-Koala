@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom scrollbar styles */
+.scrollbar-hide::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: #c7d2fe;
+  border-radius: 4px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: #a5b4fc;
+}
+
+/* For Firefox */
+.scrollbar-hide {
+  scrollbar-width: thin;
+  scrollbar-color: #c7d2fe #f1f1f1;
+}

@@ -1,104 +1,53 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Plus, X, Clock, Coffee, CheckCircle, RotateCw, ChevronDown, ChevronUp, Gamepad2 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Play, Plus, X, Clock, Coffee, CheckCircle, RotateCw, ChevronDown, ChevronUp, Gamepad2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { duration } from 'moment';
+import { StudySession, DayPlanItem } from './types';
+import { 
+  TimerDisplay, 
+  StudyPlanCard, 
+  TimerOptionsModal, 
+  CelebrationModal,
+  BreakManager,
+  ContinueStudying
+} from './components';
 
-// Color constants
-const COLORS = {
-  primary: {
-    500: '#6366f1',
-    600: '#4f46e5',
-    700: '#4338ca',
-  },
-  secondary: {
-    500: '#ec4899',
-    600: '#db2777',
-  },
-  success: {
-    500: '#10b981',
-  },
-  warning: {
-    500: '#f59e0b',
-  },
-  danger: {
-    500: '#ef4444',
-  },
-  gray: {
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    700: '#374151',
-    900: '#111827',
-  },
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.4,
-    },
-  },
-};
-
-interface StudySession {
-  id: string;
-  subject: string;
-  duration: number;
-  break_duration: number;
-  type?: 'study' | 'break';
-  isCurrent?: boolean;
-  completed: boolean;
-  completed_at?: Date;
-  created_at: Date;
-}
-
-
+// Default study session duration in minutes
+const DEFAULT_STUDY_DURATION = 25;
+const DEFAULT_BREAK_DURATION = 5;
 
 export default function StudyPlanner() {
+  // State for modals and UI
   const [showTimerOptions, setShowTimerOptions] = useState(false);
-  const [showDayPlanner, setShowDayPlanner] = useState(false);
-  const [dayPlan, setDayPlan] = useState<Array<{
-    id: string;
-    subject: string;
-    duration: number;
-    break_duration: number;
-    type: 'study' | 'break';
-  }>>([]);
-  
-  const [newStudySession, setNewStudySession] = useState({
-    subject: '',
-    duration: 25,
-  });
-
-  const [currentSession, setCurrentSession] = useState<StudySession | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
-  const [showBreakOptions, setShowBreakOptions] = useState<boolean>(false);
-  const [breakDuration, setBreakDuration] = useState<number>(5); // Default 5 minutes
+  const [showContinueStudying, setShowContinueStudying] = useState<boolean>(false);
+  const [showBreakManager, setShowBreakManager] = useState<boolean>(false);
+  const [isInBreakFlow, setIsInBreakFlow] = useState<boolean>(false);
+  
+  // Session and timer state
+  const [currentSession, setCurrentSession] = useState<StudySession | null>(null);
+  const [dayPlan, setDayPlan] = useState<DayPlanItem[]>([]);
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isActive, setIsActive] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Session configuration
+  const [newStudySession, setNewStudySession] = useState({
+    subject: 'Focus Session',
+    duration: 25, // 25 minutes default
+    break_duration: 5, // 5 minutes default break
+  });
+  
+  // Initialize timer with default duration
+  useEffect(() => {
+    setTimeRemaining(newStudySession.duration * 60);
+  }, [newStudySession.duration]);
+  
   const timerRef = useRef<NodeJS.Timeout>();
-
-  // Timer control functions
+  
+  // Clear the timer interval
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -106,818 +55,603 @@ export default function StudyPlanner() {
     }
   }, []);
 
-  const startCountdown = useCallback((duration: number) => {
-    console.log('Starting countdown with duration:', duration);
-    clearTimer();
-    setTimeRemaining(duration);
-    setIsActive(true);
-    setIsPaused(false);
-    console.log('Timer started. isActive:', true, 'isPaused:', false);
+  // Save session to backend
+  const saveSessionToBackend = useCallback(async (session: StudySession) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        const errorMsg = 'No authentication token found';
+        throw new Error(errorMsg);
+      }
 
-    const endTime = Date.now() + (duration * 1000);
-    
-    // Update the timer immediately
-    const updateTimer = () => {
-      const now = Date.now();
-      const timeLeft = Math.max(0, Math.ceil((endTime - now) / 1000));
-      
-      setTimeRemaining(timeLeft);
-      
-      if (timeLeft <= 0) {
-        console.log('Timer reached zero in updateTimer');
-        clearInterval(timerRef.current);
-        setIsActive(false);
-        timerRef.current = undefined;
-        return true;
-      }
-      return false;
-    };
-    
-    // Initial update
-    updateTimer();
-    
-    // Set up interval for subsequent updates
-    timerRef.current = setInterval(updateTimer, 100);
-    
-    // Cleanup function for the interval
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = undefined;
-      }
-    };
-  }, [clearTimer]);
-  
-  // Start a break session
-  const startBreak = useCallback((duration: number) => {
-    console.log('Starting break for', duration, 'minutes');
-    setShowBreakOptions(false);
-    
-    // Create a new break session
-    const breakSession: StudySession = {
-      id: `break-${Date.now()}`,
-      subject: 'Break Time',
-      duration: duration, // Already in minutes
-      break_duration: 0,
-      type: 'break',
-      isCurrent: true,
-      completed: false,
-      created_at: new Date()
-    };
-    
-    setCurrentSession(breakSession);
-    startCountdown(breakSession.duration * 60); // Convert to seconds
-  }, [startCountdown]);
-
-  const handleSessionComplete = useCallback(() => {
-    console.log('handleSessionComplete called');
-    setCurrentSession(prevSession => {
-      if (!prevSession) {
-        console.log('No previous session found');
-        return null;
-      }
-      
-      console.log('Session completed:', prevSession);
-      
-      // Update the session to completed
-      const updatedSession = {
-        ...prevSession,
+      const now = new Date();
+      const sessionToSave = {
+        subject: session.subject || 'Study Session',
+        type: session.type || 'study',
+        duration: session.duration || 0,
+        break_duration: session.break_duration || 0,
+        start_time: session.startTime || now,
+        end_time: session.end_time || now,
         completed: true,
-        completed_at: new Date(),
+        notes: session.notes || '',
+        created_at: session.created_at || now,
+        updated_at: now
       };
-      
-      // Show break options if it was a study session
-      if (prevSession.type === 'study') {
-        console.log('Showing break options for study session');
-        setShowBreakOptions(true);
+
+
+      const response = await fetch('http://localhost:5000/api/study/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include',
+        body: JSON.stringify(sessionToSave, (key, value) => 
+          value instanceof Date ? value.toISOString() : value
+        )
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMsg = `Failed to save session: ${response.status} ${response.statusText} - ${errorText}`;
+        throw new Error(errorMsg);
       }
+
+      const responseData = await response.json();
       
-      return updatedSession;
-    });
+      return responseData;
+    } catch (error) {
+      throw error; // Re-throw to allow caller to handle the error
+    }
   }, []);
 
-  const moveToNextSession = useCallback(() => {
-    if (!currentSession) return;
+  // Handle session completion
+  const handleSessionComplete = useCallback(async () => {
+    clearTimer();
     
-    const currentIndex = dayPlan.findIndex(s => s.id === currentSession.id);
-    if (currentIndex < dayPlan.length - 1) {
-      const nextSession = dayPlan[currentIndex + 1];
-      setCurrentSession({
-        ...nextSession,
-        isCurrent: true,
-        completed: false,
-        created_at: new Date()
-      });
-      startCountdown(nextSession.duration * 60);
-    } else {
-      setDayPlan([]);
-      setCurrentSession(null);
-      setIsPaused(false);
-      setIsActive(false);
-    }
-  }, [currentSession, dayPlan, startCountdown]);
-  
-  useEffect(() => {
-    if (timeRemaining <= 0 && isActive) {
-      clearTimer();
-      
-      if (dayPlan.length > 0) {
-        moveToNextSession();
-      } else {
-        setShowCelebration(true);
-        confetti({
-          particleCount: 150,
-          spread: 90,
-          origin: { y: 0.6 },
-          colors: ['#6366f1', '#ec4899', '#10b981', '#f59e0b'],
-        });
-        
-        const timer = setTimeout(() => {
-          confetti.reset();
-          setShowCelebration(false);
-          handleSessionComplete();
-        }, 5000);
-        
-        return () => {
-          clearTimeout(timer);
-          confetti.reset();
-        };
-      }
-    }
-  }, [timeRemaining, isActive, clearTimer, handleSessionComplete, dayPlan, moveToNextSession]);
+    const prev = currentSession;
+    if (!prev) return;
+    
+    // Determine if this is a break session
+    const isBreak = prev.type === 'break';
+    console.log('Session completing - isBreak:', isBreak, 'session:', prev);
 
-  // Handle timer completion and celebration
-  useEffect(() => {
-    if (timeRemaining === 0 && isActive === false && currentSession) {
-      console.log('Timer completed, showing celebration');
-      
-      // Show celebration immediately
-      setShowCelebration(true);
-      confetti({
-        particleCount: 150,
-        spread: 90,
-        origin: { y: 0.6 },
-        colors: ['#6366f1', '#ec4899', '#10b981', '#f59e0b'],
-      });
-      
-      // After celebration, show break options if it's a study session
-      const timer = setTimeout(() => {
-        console.log('Celebration complete, showing break options');
-        setShowCelebration(false);
-        
-        if (currentSession.type === 'study') {
-          console.log('Showing break options');
-          setShowBreakOptions(true);
-        }
-      }, 3000);
-      
-      return () => {
-        clearTimeout(timer);
-        confetti.reset();
-      };
-    }
-  }, [timeRemaining, isActive, currentSession]);
-
-  useEffect(() => {
-    if (timeRemaining <= 0 && isActive) {
-      clearTimer();
-      handleSessionComplete();
-    }
-  }, [timeRemaining, isActive, clearTimer, handleSessionComplete]);
-
-  const startTimer = useCallback(() => {
-    if (!currentSession) return;
-    const initialTime = currentSession.duration * 60;
-    startCountdown(initialTime);
-  }, [currentSession, startCountdown]);
-
-  // Start a free study session
-  const startFreeStudy = useCallback(() => {
-    const newSession: StudySession = {
-      id: Date.now().toString(),
-      subject: 'Focus Session',
-      duration: 25,
-      break_duration: 5,
-      type: 'study',
-      isCurrent: true,
-      completed: false,
-      created_at: new Date()
+    // Update session state
+    const completedSession = { 
+      ...prev, 
+      completed: true, 
+      completed_at: new Date(),
+      end_time: new Date(),
+      startTime: prev.startTime || new Date(),
+      duration: prev.duration || 0,
+      break_duration: prev.break_duration || 0,
+      subject: prev.subject || (isBreak ? 'Break' : 'Study Session'),
+      type: prev.type // Preserve the session type
     };
+
+    // Update local state
+    setCurrentSession(completedSession);
     
-    setCurrentSession(newSession);
-    setTimeRemaining(newSession.duration * 60);
-    setIsActive(true);
-    setShowTimerOptions(false);
-  }, []);
+    // Close all modals
+    setShowBreakManager(false);
+    setShowCelebration(false);
+    setShowContinueStudying(false);
 
-  const pauseTimer = useCallback(() => {
-    clearTimer();
-    setIsPaused(true);
+    // Handle break session completion
+    if (isBreak) {
+      console.log('Break session completed, showing continue options');
+      setShowContinueStudying(true);
+    } 
+    // Handle study session completion
+    else {
+      console.log('Study session completed, showing celebration');
+      setShowCelebration(true);
+    }
+    
+    // Update day plan to mark session as completed
+    setDayPlan(currentPlan => 
+      currentPlan
+        .filter(session => session.id !== prev.id)
+        .map(item => 
+          item.id === prev.id ? { ...item, completed: true } : item
+        )
+    );
+    
+    try {
+      console.log('Saving session to backend...', completedSession);
+      await saveSessionToBackend(completedSession);
+    } catch (error) {
+      console.error('Failed to save session:', error);
+    }
+    
     setIsActive(false);
-  }, [clearTimer]);
-
-  const stopTimer = useCallback(() => {
-    clearTimer();
     setIsPaused(false);
-    setIsActive(false);
-    setTimeRemaining(0);
-    setCurrentSession(null);
-  }, [clearTimer]);
-
-  // Modal functions
-  const handleCreateSession = useCallback(() => {
-    setIsModalOpen(true);
-    // Reset form with default values
-    setNewStudySession({
-      subject: '',
-      duration: 25,
-    });
-  }, []);
+  }, [clearTimer, currentSession]);
   
-  const startOrResumeTimer = useCallback((sessionToStart?: StudySession) => {
-    console.log('startOrResumeTimer called with session:', sessionToStart);
-    console.log('Current state:', { isPaused, currentSession, timeRemaining });
+  // Pause the timer
+  const pauseTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = undefined;
+      setIsPaused(true);
+    }
+  }, []);
+
+  // Start or resume the timer
+  const startOrResumeTimer = useCallback(() => {
+    // Ensure we have the latest state values
+    const currentSessionValue = currentSession;
+    const timeRemainingValue = timeRemaining;
     
-    // If a specific session is provided, set it as current
-    if (sessionToStart) {
-      console.log('Starting specific session:', sessionToStart.subject);
-      const initialTime = sessionToStart.duration * 60;
-      setCurrentSession(sessionToStart);
-      setTimeRemaining(initialTime);
-      setIsPaused(false);
-      setIsActive(true);
-      startCountdown(initialTime);
+    // Clear any existing timer
+    if (timerRef.current) {
+      console.log('Clearing existing timer');
+      clearInterval(timerRef.current);
+      timerRef.current = undefined;
+    }
+    
+    // Get the session type with fallback
+    const sessionType = currentSessionValue?.type || 'study';
+    
+    // For break sessions, always use the session's duration
+    // For study sessions, use the remaining time or the session's duration
+    let effectiveDuration;
+    let remainingTime = timeRemainingValue;
+    
+    if (sessionType === 'break') {
+      // For breaks, always use the break duration
+      effectiveDuration = currentSessionValue?.duration || 1; // Default to 1 minute if not set
+      remainingTime = effectiveDuration * 60; // Always reset to full break duration
+    } else {
+      // For study sessions, use remaining time or session duration
+      effectiveDuration = currentSessionValue?.duration || newStudySession.duration;
+      remainingTime = timeRemainingValue > 0 ? timeRemainingValue : effectiveDuration * 60;
+    }
+    
+    // Update the time remaining if needed
+    if (timeRemainingValue <= 0 || sessionType === 'break') {
+      const newTimeRemaining = sessionType === 'break' ? effectiveDuration * 60 : remainingTime;
+      console.log('Setting initial time remaining to:', newTimeRemaining, 'seconds for', sessionType, 'session');
+      setTimeRemaining(newTimeRemaining);
+      
+      // If we had to set the time remaining, we need to wait for the state update
+      setTimeout(() => {
+        startTimerWithDuration(effectiveDuration, sessionType);
+      }, 0);
       return;
     }
     
-    if (isPaused) {
-      // If paused, resume with the current timeRemaining
-      console.log('Resuming timer with remaining time:', timeRemaining);
-      setIsPaused(false);
-      setIsActive(true);
-      startCountdown(timeRemaining);
-    } else if (currentSession) {
-      // If we have a current session (completed or not), start it from the beginning
-      const initialTime = currentSession.duration * 60;
-      console.log('Starting current session from beginning:', currentSession.subject);
-      setTimeRemaining(initialTime);
-      setIsPaused(false);
-      setIsActive(true);
-      startCountdown(initialTime);
-    } else {
-      // Otherwise, open the modal to create a new session
-      console.log('No current session, opening create modal');
-      handleCreateSession();
+    // Otherwise start the timer with the current remaining time
+    startTimerWithDuration(effectiveDuration, sessionType);
+  }, [isActive, isPaused, timeRemaining, currentSession, newStudySession.duration]);
+  
+  // Helper function to start the timer with a specific duration
+  const startTimerWithDuration = useCallback((duration: number, sessionType: string) => {
+    // Update timer state
+    setIsActive(true);
+    setIsPaused(false);
+    
+    // Store the start time for accurate elapsed time calculation
+    const startTime = Date.now();
+    const initialRemaining = timeRemaining > 0 ? timeRemaining : duration * 60;
+    
+    console.log('Starting timer with duration:', duration, 'minutes, type:', sessionType, 'initialRemaining:', initialRemaining);
+    
+    // Clear any existing timer (just to be safe)
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
     }
-  }, [currentSession, isPaused, startCountdown, handleCreateSession, timeRemaining]);
-
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
-    setNewStudySession({
-      subject: '',
-      duration: 25,
-    });
-  }, []);
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault(); // Prevent default form submission
-      if (isSubmitting) return;
+    
+    // Start the timer
+    timerRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, initialRemaining - elapsed);
       
-      setIsSubmitting(true);
-      try {
-        const breakDuration = Math.ceil(newStudySession.duration / 3);
-        const sessionData = {
-          subject: newStudySession.subject.trim(),
-          duration: newStudySession.duration,
-          break_duration: breakDuration,
-        };
-
-        const createdSession: StudySession = {
-          id: crypto.randomUUID(),
-          ...sessionData,
-          completed: false,
-          created_at: new Date(),
-        };
-
-        setCurrentSession(createdSession);
-        handleCloseModal();
-        
-        // Start the countdown with the new session's duration
-        startCountdown(createdSession.duration * 60);
-      } catch (error) {
-        console.error('Error creating session:', error);
-      } finally {
-        setIsSubmitting(false);
+      setTimeRemaining(remaining);
+      
+      if (remaining <= 0) {
+        clearTimer();
+        handleSessionComplete();
       }
-    },
-    [isSubmitting, newStudySession, handleCloseModal, startCountdown]
-  );
+    }, 1000);
+  }, [timeRemaining, clearTimer, handleSessionComplete]);
 
-  // Add a study session to the day plan
-  const addToDayPlan = useCallback(() => {
-    if (!newStudySession.subject.trim() || newStudySession.duration <= 0) return;
+  // Toggle between play/pause
+  const togglePlayPause = useCallback(() => {
+    if (!isActive) {
+      // If timer is not active, start it
+      startOrResumeTimer();
+    } else if (isPaused) {
+      // If paused, resume
+      startOrResumeTimer();
+    } else {
+      // If running, pause
+      pauseTimer();
+    }
+  }, [isActive, isPaused, pauseTimer, startOrResumeTimer]);
+
+  // Start a free study session
+  const startFreeStudy = useCallback(() => {
+    const duration = newStudySession.duration || 25; // Default to 25 minutes if not set
+    const breakDuration = Math.max(1, Math.floor(duration / 3)); // 1/3 of study time for break
     
-    const breakDuration = Math.ceil(newStudySession.duration / 3); // One-third of study time as break
+    if (duration <= 0) {
+      return;
+    }
     
-    setDayPlan(prev => [
-      ...prev,
-      {
-        id: `study-${Date.now()}`,
-        subject: newStudySession.subject,
-        duration: newStudySession.duration,
-        break_duration: breakDuration,
-        type: 'study' as const
-      },
-      {
-        id: `break-${Date.now() + 1}`,
-        subject: 'Break',
-        duration: breakDuration,
-        break_duration: 0,
-        type: 'break' as const
-      }
-    ]);
+    const newSession: StudySession = {
+      id: `session-${Date.now()}`,
+      subject: newStudySession.subject || 'Free Study',
+      duration: duration,
+      break_duration: breakDuration,
+      type: 'study',
+      created_at: new Date(),
+      isCurrent: true,
+      completed: false
+    };
     
-    // Reset the form but keep the duration for convenience
+    setCurrentSession(newSession);
+    setTimeRemaining(duration * 60);
+    setShowTimerOptions(false);
+    startOrResumeTimer();
+  }, [newStudySession.duration, newStudySession.subject, startOrResumeTimer, setCurrentSession, setTimeRemaining, setShowTimerOptions]);
+  
+
+  // Start a planned study session with custom details
+  const startPlannedSession = useCallback(({ subject, duration }: { subject: string; duration: number }) => {
+    const breakDuration = Math.max(1, Math.floor(duration / 3));
+    const sessionId = `session-${Date.now()}`;
+    
+    const newSession: StudySession = {
+      id: sessionId,
+      subject: subject || 'Planned Session',
+      duration: duration,
+      break_duration: breakDuration,
+      type: 'study',
+      created_at: new Date(),
+      isCurrent: true,
+      completed: false
+    };
+    
+    // Create a day plan item that matches DayPlanItem type
+    const newPlanItem: DayPlanItem = {
+      id: sessionId,
+      subject: subject || 'Planned Session',
+      duration: duration,
+      break_duration: breakDuration,
+      type: 'study',
+      completed: false
+    };
+    
+    // Update newStudySession state with the latest values
     setNewStudySession(prev => ({
-      subject: '',
-      duration: prev.duration, // Keep the same duration for the next session
+      ...prev,
+      subject,
+      duration
     }));
-  }, [newStudySession]);
-  
-  // Remove a session from the day plan
-  const removeFromDayPlan = useCallback((id: string) => {
-    setDayPlan(prev => prev.filter(session => session.id !== id));
-  }, []);
-  
-  // Start the planned day
-  const startPlannedDay = useCallback(() => {
-    if (dayPlan.length === 0) return;
     
-    // Convert day plan to sessions (both study and break)
-    const daySessions: StudySession[] = dayPlan.map(session => ({
-      id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      subject: session.subject,
-      duration: session.duration,
-      break_duration: session.break_duration,
-      type: session.type,
+    // Reset timer state before starting new session
+    clearTimer();
+    setIsActive(false);
+    setIsPaused(false);
+    
+    setCurrentSession(newSession);
+    setDayPlan(prev => [...prev, newPlanItem]);
+    setTimeRemaining(duration * 60);
+    setShowTimerOptions(false);
+  }, [clearTimer]);
+  
+  // Reset the timer
+  const resetTimer = useCallback(() => {
+    clearTimer();
+    setIsActive(false);
+    setIsPaused(false);
+    if (currentSession) {
+      setTimeRemaining(currentSession.duration * 60);
+    } else {
+      setTimeRemaining(0);
+    }
+  }, [clearTimer, currentSession]);
+  
+  // Start a specific session
+  const startSession = useCallback((session: StudySession) => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = undefined;
+    }
+
+    const isBreak = session.type === 'break';
+    const duration = isBreak 
+      ? Math.max(1, session.duration || 1)  // Ensure at least 1 minute for breaks
+      : (session.duration > 0 ? session.duration : newStudySession.duration);
+
+    // Create a new session object ensuring type is preserved
+    const updatedSession: StudySession = {
+      ...session,
+      type: isBreak ? 'break' as const : 'study' as const, // Ensure type is explicitly set and typed
+      duration,
+      isCurrent: true,
+      completed: false,
+      startTime: new Date(),
+      end_time: new Date(Date.now() + duration * 60 * 1000),
+      created_at: session.created_at || new Date(),
+      subject: session.subject || (isBreak ? 'Break' : 'Study Session'),
+      id: session.id || `session-${Date.now()}`,
+      break_duration: session.break_duration || 0
+    };
+
+    // Reset timer state
+    setIsActive(true);
+    setIsPaused(false);
+    
+    // Update the current session state
+    setCurrentSession(updatedSession);
+    setTimeRemaining(duration * 60);
+
+    // Start the timer with the correct session type
+    startTimerWithDuration(duration, isBreak ? 'break' : 'study');
+  }, [newStudySession.duration, startTimerWithDuration]);
+  
+  // Cache for in-flight requests to prevent duplicates
+  const activeRequests = useRef<Record<string, Promise<StudySession[]>>>({});
+  // Cache for session data with a timestamp
+  const sessionCache = useRef<{
+    data: StudySession[];
+    timestamp: number;
+  } | null>(null);
+  
+  // Cache duration in milliseconds (5 minutes)
+  const CACHE_DURATION = 5 * 60 * 1000;
+
+  // Log break flow state changes
+  useEffect(() => {
+    console.log('isInBreakFlow updated to:', isInBreakFlow);
+  }, [isInBreakFlow]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
+  }, [clearTimer]);
+  
+  // Start timer function for the play button
+  const handleStartTimer = () => {
+    if (!currentSession) {
+      if (dayPlan.length > 0) {
+        const sessionToStart = {
+          ...dayPlan[0],
+          id: `session-${Date.now()}`,
+          created_at: new Date(),
+          isCurrent: true,
+          completed: false,
+          type: dayPlan[0].type as 'study' | 'break',
+          subject: dayPlan[0].subject || 'Study Session',
+          break_duration: dayPlan[0].break_duration || DEFAULT_BREAK_DURATION
+        };
+        startSession(sessionToStart);
+      } else {
+        startFreeStudy();
+      }
+    } else {
+      startOrResumeTimer();
+    }
+  };
+
+  // Handle start session from day plan
+  const handleStartSession = (session: DayPlanItem) => {
+    const newSession: StudySession = {
+      ...session,
+      id: `session-${Date.now()}`,
+      created_at: new Date(),
+      isCurrent: true,
+      completed: false,
+      type: session.type as 'study' | 'break',
+      subject: session.subject || 'Study Session',
+      break_duration: session.break_duration || DEFAULT_BREAK_DURATION
+    };
+    startSession(newSession);
+  };
+
+  // Format time in MM:SS format
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+
+
+  // Handle break start
+  const handleStartBreak = (breakSession: StudySession) => {
+    console.group('handleStartBreak');
+    
+    // Close any open modals
+    setShowCelebration(false);
+    setShowContinueStudying(false);
+    setShowBreakManager(false);
+    
+    // Calculate break duration as 1/3 of the study session duration
+    const studyDuration = currentSession?.duration || newStudySession.duration;
+    const breakDuration = Math.max(1, Math.floor(studyDuration / 3)); // Ensure at least 1 minute
+    
+    console.log(`Starting break: ${breakDuration} minutes`);
+    
+    // Create a proper break session
+    const breakSessionToStart: StudySession = {
+      ...breakSession,
+      id: `break-${Date.now()}`,
+      type: 'break',
+      subject: 'Break',
+      duration: breakDuration,
+      break_duration: 0,
+      isCurrent: true,
       completed: false,
       created_at: new Date(),
-    }));
+      startTime: new Date(),
+      end_time: new Date(Date.now() + breakDuration * 60 * 1000), // Set proper end time
+      notes: ''
+    };
     
-    if (daySessions.length > 0) {
-      // Add to sessions and start the first one
-      setCurrentSession({
-        ...daySessions[0],
-        isCurrent: true
-      });
-      startCountdown(daySessions[0].duration * 60);
-      setShowDayPlanner(false);
-    }
-  }, [dayPlan, startCountdown]);
-  
-  // Start a day of studying
-  const startDay = useCallback(() => {
-    setShowTimerOptions(false);
-    setShowDayPlanner(true);
-  }, []);
+    // Start the break session first
+    startSession(breakSessionToStart);
+    setIsInBreakFlow(true);
+  };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-5xl font-bold text-gray-900 mb-3">
-            FocusFlow
-          </h1>
-          <div className="pt-3 flex gap-4 justify-center">
-            <motion.button
-              onClick={startFreeStudy}
-              whileHover={{ y: -2, backgroundColor: 'rgba(99, 102, 241, 0.2)' }}
-              whileTap={{ scale: 0.98 }}
-              className="px-6 py-3 bg-indigo-100/80 text-indigo-700 rounded-full font-medium transition-all duration-200 border-2 border-indigo-200/80 hover:border-indigo-300/90 flex items-center justify-center gap-2 backdrop-blur-sm"
-            >
-              <Play className="w-5 h-5" />
-              <span>Quick Start</span>
-            </motion.button>
-            <motion.button
-              onClick={startDay}
-              whileHover={{ y: -2, backgroundColor: 'rgba(79, 70, 229, 0.1)' }}
-              whileTap={{ scale: 0.98 }}
-              className="px-6 py-3 bg-white/80 text-indigo-700 rounded-full font-medium transition-all duration-200 border-2 border-indigo-100 hover:border-indigo-200 flex items-center justify-center gap-2 backdrop-blur-sm"
-            >
-              <Clock className="w-5 h-5" />
-              <span>Plan Session</span>
-            </motion.button>
-          </div>
-        </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">FocusFlow</h1>
+          <p className="text-gray-600">Stay focused and track your study sessions</p>
+        </header>
         
-        {/* Timer Display */}
-        <motion.div 
-          className="bg-white rounded-2xl shadow-lg p-8 mb-8 relative overflow-hidden border border-gray-200"
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, type: 'spring', stiffness: 300, damping: 20 }}
-        >
-          {/* Circular Progress Background */}
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <svg className="w-full h-full" viewBox="0 0 100 100">
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="45" 
-                fill="none" 
-                stroke="#f3f4f6" 
-                strokeWidth="8"
+        {/* Main Content */}
+        <div className="space-y-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Column - Timer (70% width) */}
+            <div className="w-full lg:w-8/12 bg-white rounded-2xl shadow-xl overflow-hidden">
+              <TimerDisplay
+                currentSession={currentSession}
+                timeRemaining={timeRemaining}
+                isActive={isActive}
+                isPaused={isPaused}
+                onStartPause={togglePlayPause}
+                onReset={resetTimer}
+                onShowTimerOptions={() => setShowTimerOptions(true)}
+                formatTime={formatTime}
+                onStart={handleStartTimer}
               />
-              <motion.circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                stroke={currentSession?.type === 'break' ? '#10b981' : '#4f46e5'}
-                strokeWidth="8"
-                strokeLinecap="round"
-                initial={{ pathLength: 1 }}
-                animate={{
-                  pathLength: currentSession 
-                    ? timeRemaining / (currentSession.duration * 60)
-                    : 1
-                }}
-                transition={{ duration: 0.5, ease: 'easeInOut' }}
-                className="origin-center -rotate-90"
+            </div>
+            
+            {/* Right Column - Study Plan */}
+            <div className="w-full lg:w-4/12">
+              <StudyPlanCard
+                dayPlan={dayPlan}
+                currentSession={currentSession}
+                onAddSession={() => setShowTimerOptions(true)}
+                onStartSession={handleStartSession}
               />
-            </svg>
-          </div>
-
-          <div className="relative z-10">
-            <div className="flex flex-col items-center justify-center py-12">
-              {/* Phase Indicator */}
-              <div className={`px-4 py-1.5 rounded-full text-sm font-medium mb-8 ${
-                currentSession?.type === 'break' 
-                  ? 'bg-green-100 text-green-800 border border-green-200' 
-                  : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-              }`}>
-                {currentSession?.type === 'break' ? 'TAKE A BREAK' : currentSession ? 'FOCUS TIME' : 'READY TO FOCUS'}
-              </div>
-              
-              {/* Timer Display */}
-              <div className="flex items-center justify-center my-8">
-                <div className="text-center">
-                  <div className="flex items-center justify-center">
-                    <div className="w-28 text-center">
-                      <div className="text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Minutes</div>
-                      <div className="text-8xl font-bold font-sans text-gray-900 leading-none tracking-tight">
-                        {currentSession ? Math.floor(timeRemaining / 60).toString().padStart(2, '0') : '00'}
-                      </div>
-                    </div>
-                    <div className="text-7xl font-bold text-indigo-500 mx-6 leading-none mt-4">:</div>
-                    <div className="w-28 text-center">
-                      <div className="text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Seconds</div>
-                      <div className="text-8xl font-bold font-sans text-gray-900 leading-none tracking-tight">
-                        {currentSession ? (timeRemaining % 60).toString().padStart(2, '0') : '00'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Current Subject */}
-              <div className={`text-xl font-medium max-w-md truncate ${
-                currentSession?.type === 'break' ? 'text-green-700' : 'text-indigo-700'
-              } mb-8`}>
-                {currentSession?.subject || 'No active session'}
-              </div>
-              
-              {/* Controls */}
-              <div className="flex flex-wrap justify-center gap-4 mt-6">
-                {isActive ? (
-                  <motion.button
-                    key="pause"
-                    whileHover={{ y: -2, backgroundColor: 'rgba(245, 158, 11, 0.15)' }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={pauseTimer}
-                    className="px-6 py-3 bg-amber-100/70 text-amber-800 rounded-full font-medium transition-all duration-200 border-2 border-amber-200/80 hover:border-amber-300/90 flex items-center justify-center gap-2 backdrop-blur-sm"
-                  >
-                    <Pause className="w-5 h-5" />
-                    <span>Pause</span>
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    key="start"
-                    whileHover={{ y: -2, backgroundColor: 'rgba(99, 102, 241, 0.15)' }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => startOrResumeTimer()}
-                    className="px-6 py-3 bg-indigo-100/80 text-indigo-700 rounded-full font-medium transition-all duration-200 border-2 border-indigo-200/80 hover:border-indigo-300/90 flex items-center justify-center gap-2 backdrop-blur-sm"
-                  >
-                    <Play className="w-5 h-5" />
-                    <span>{currentSession ? 'Resume' : 'Start Focus'}</span>
-                  </motion.button>
-                )}
-                
-                <motion.button
-                  whileHover={{ y: -2, backgroundColor: 'rgba(243, 244, 246, 0.8)' }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={stopTimer}
-                  className="px-6 py-3 bg-white/80 text-gray-700 rounded-full font-medium transition-all duration-200 border-2 border-gray-200 hover:border-gray-300 flex items-center justify-center gap-2 backdrop-blur-sm"
-                >
-                  <RotateCw className="w-5 h-5" />
-                </motion.button>
-              </div>
             </div>
           </div>
-        </motion.div>
-        
-        {/* Timer Options Modal */}
-        <AnimatePresence>
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
           {showTimerOptions && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowTimerOptions(false)}
-            >
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 20, opacity: 0 }}
-                className="bg-white rounded-2xl p-6 w-full max-w-md"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900">Start Timer</h3>
-                  <button
-                    onClick={() => setShowTimerOptions(false)}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
+            <TimerOptionsModal
+              key="timer-options"
+              isOpen={showTimerOptions}
+              onClose={() => setShowTimerOptions(false)}
+              onStartFreeStudy={startFreeStudy}
+              onStartPlannedSession={startPlannedSession}
+            />
+          )}
+
+          {/* Show Celebration after study session */}
+          {showCelebration && currentSession?.type === 'study' && (
+            <CelebrationModal
+              key="celebration-modal"
+              isOpen={showCelebration}
+              onClose={() => {
+                console.log('Celebration modal closed, showing BreakManager');
+                setShowCelebration(false);
+                setTimeout(() => setShowBreakManager(true), 100);
                 
-                <div className="space-y-4">
-                  <button
-                    onClick={startFreeStudy}
-                    className="w-full p-4 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-between"
-                  >
-                    <span className="font-medium">Free study</span>
-                    <span className="text-sm text-indigo-500">Start now</span>
-                  </button>
-                  
-                  <button
-                    onClick={startDay}
-                    className="w-full p-4 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition-colors flex items-center justify-between"
-                  >
-                    <span className="font-medium">Start Day</span>
-                    <span className="text-sm text-green-500">Plan your day</span>
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
+                const breakSession: StudySession = {
+                  id: `break-${Date.now()}`,
+                  type: 'break',
+                  subject: 'Break',
+                  duration: Math.max(1, Math.floor((currentSession?.duration || newStudySession.duration) / 3)),
+                  break_duration: 0,
+                  isCurrent: true,
+                  completed: false,
+                  created_at: new Date(),
+                  startTime: new Date(),
+                  end_time: new Date(),
+                  notes: ''
+                };
+                setCurrentSession(breakSession);
+              }}
+              message="Great job! Time for a break?"
+            />
+          )}
+
+          {/* Single source of truth for BreakManager */}
+          {showBreakManager && currentSession?.type === 'break' && !currentSession.completed && (
+            <BreakManager
+              key="break-manager"
+              isBreakComplete={false}
+              onStartBreak={(breakSession) => {
+                if (currentSession) {
+                  setCurrentSession({...currentSession, isCurrent: false});
+                }
+                handleStartBreak(breakSession);
+              }}
+              onClose={() => {
+                setShowBreakManager(false);
+                setCurrentSession(currentSession);
+                setTimeRemaining(currentSession.duration * 60);
+              }}
+              breakDuration={Math.max(1, Math.floor((currentSession?.duration || newStudySession.duration) / 3))}
+              completedSession={currentSession}
+            />
+          )}
+
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showContinueStudying && (
+            <ContinueStudying
+              key="continue-studying"
+              isOpen={showContinueStudying}
+              onStartStudy={() => {
+                setShowContinueStudying(false);
+                setTimeRemaining(newStudySession.duration * 60);
+                startPlannedSession({
+                  subject: 'Study Session',
+                  duration: newStudySession.duration
+                });
+                setTimeRemaining(newStudySession.duration * 60);
+              }}
+              onTakeBreak={() => {
+                setShowContinueStudying(false);
+                handleStartBreak({
+                  id: `break-${Date.now()}`,
+                  type: 'break',
+                  subject: 'Break',
+                  duration: newStudySession.break_duration || DEFAULT_BREAK_DURATION,
+                  break_duration: 0,
+                  isCurrent: true,
+                  completed: false,
+                  created_at: new Date(),
+                  startTime: new Date(),
+                  end_time: new Date(),
+                  notes: ''
+                });
+                handleStartBreak({  
+                  id: `break-${Date.now()}`,
+                  type: 'break',
+                  subject: 'Break',
+                  duration: newStudySession.break_duration || DEFAULT_BREAK_DURATION,
+                  break_duration: 0, 
+                  isCurrent: true,
+                  completed: false,
+                  created_at: new Date(),
+                  startTime: new Date(),
+                  end_time: new Date(),
+                  notes: ''
+                });
+              }}
+              onClose={() => {
+                setShowContinueStudying(false);
+                setTimeRemaining(newStudySession.duration * 60);
+              }}
+            />
           )}
         </AnimatePresence>
-      
-      {/* Day Planner Modal */}
-      <AnimatePresence>
-        {showDayPlanner && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowDayPlanner(false)}
-          >
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Plan Your Study Day</h3>
-                <button
-                  onClick={() => setShowDayPlanner(false)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              
-              <div className="space-y-6">
-                {/* Add Session Form */}
-                <div className="bg-white/50 backdrop-blur-sm p-5 rounded-2xl border border-gray-100 shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4">Add Study Session</h4>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      type="text"
-                      value={newStudySession.subject}
-                      onChange={(e) => setNewStudySession(prev => ({...prev, subject: e.target.value}))}
-                      placeholder="What are you studying?"
-                      className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={newStudySession.duration}
-                          onChange={(e) => setNewStudySession(prev => ({...prev, duration: parseInt(e.target.value) || 25}))}
-                          min="1" /* For testing */
-                          max="120"
-                          step="1"
-                          className="w-24 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none transition-all duration-200"
-                        />
-                      </div>
-                      <button
-                        onClick={addToDayPlan}
-                        disabled={!newStudySession.subject.trim()}
-                        className="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-md"
-                      >
-                        <Plus className="w-5 h-5" />
-                        <span className="sr-only sm:not-sr-only">Add</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Sessions List */}
-                {dayPlan.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-semibold text-gray-800">Your Study Plan</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">
-                          {dayPlan.reduce((acc, curr) => acc + curr.duration, 0)} min total
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {dayPlan.map((session, index) => (
-                        <motion.div 
-                          key={session.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, delay: index * 0.05 }}
-                          className={`group relative flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
-                            session.type === 'break' 
-                              ? 'bg-blue-50 border-l-4 border-blue-400' 
-                              : 'bg-white border-l-4 border-indigo-400 shadow-sm hover:shadow-md'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`p-2.5 rounded-xl ${
-                              session.type === 'break' 
-                                ? 'bg-blue-100 text-blue-600' 
-                                : 'bg-indigo-100 text-indigo-600'
-                            }`}>
-                              {session.type === 'break' ? (
-                                <Coffee className="w-5 h-5" />
-                              ) : (
-                                <Clock className="w-5 h-5" />
-                              )}
-                            </div>
-                            <div>
-                              <div className={`font-medium ${
-                                session.type === 'break' ? 'text-blue-800' : 'text-gray-800'
-                              }`}>
-                                {session.type === 'break' ? 'Break' : session.subject}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {session.duration} minutes
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => removeFromDayPlan(session.id)}
-                            className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-colors"
-                            aria-label="Remove session"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </motion.div>
-                      ))}
-                    </div>
-                    
-                    <div className="pt-2">
-                      <button
-                        onClick={startPlannedDay}
-                        className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 font-medium flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg"
-                      >
-                        <Play className="w-5 h-5" />
-                        Start Study Plan
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-10 bg-white/50 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-200">
-                    <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Clock className="w-7 h-7 text-indigo-400" />
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-700 mb-1">No sessions planned yet</h4>
-                    <p className="text-gray-500 max-w-xs mx-auto">Add your first study session to create your perfect study plan</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Celebration Effect */}
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-white p-8 rounded-2xl text-center"
-            >
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Great Job!</h3>
-              <p className="text-gray-600">Session completed successfully!</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Break Options Modal */}
-      <AnimatePresence>
-        {showBreakOptions && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowBreakOptions(false)}
-          >
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 w-full max-w-md"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Coffee className="w-8 h-8 text-indigo-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Break Time!</h3>
-                <p className="text-gray-600 mb-6">How would you like to spend your break?</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {currentSession && (
-                    <>
-                      <motion.button
-                        whileHover={{ y: -2, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => startBreak(Math.ceil(currentSession.duration / 3))}
-                        className="p-6 bg-indigo-50 rounded-xl border-2 border-indigo-100 hover:border-indigo-200 transition-all duration-200 text-center w-full"
-                      >
-                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Gamepad2 className="w-6 h-6 text-indigo-600" />
-                        </div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Play Games</h4>
-                        <p className="text-sm text-gray-500">{Math.ceil(currentSession.duration / 3)} minutes - Relax with some fun games</p>
-                      </motion.button>
-                      
-                      <motion.button
-                        whileHover={{ y: -2, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => startBreak(Math.ceil(currentSession.duration / 3))}
-                        className="p-6 bg-amber-50 rounded-xl border-2 border-amber-100 hover:border-amber-200 transition-all duration-200 text-center w-full"
-                      >
-                        <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Clock className="w-6 h-6 text-amber-600" />
-                        </div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Free Time</h4>
-                        <p className="text-sm text-gray-500">{Math.ceil(currentSession.duration / 3)} minutes - Take a break your way</p>
-                      </motion.button>
-                    </>
-                  )}
-                </div>
-                
-                <button
-                  onClick={() => setShowBreakOptions(false)}
-                  className="mt-6 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                >
-                  Skip break
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      </div>
     </div>
   );
 }

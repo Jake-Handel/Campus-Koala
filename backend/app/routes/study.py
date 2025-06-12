@@ -1,8 +1,7 @@
-from flask import Blueprint, request, jsonify, make_response, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request, get_jwt
-from datetime import datetime, timezone
+from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime
 from app.models.study_session import StudySession
-from app.models.user import User
 from app import db
 import traceback
 
