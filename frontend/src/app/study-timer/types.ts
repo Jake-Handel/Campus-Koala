@@ -14,6 +14,7 @@ export interface StudySession {
     end_time?: Date;
     notes?: string;
     user_id?: number;
+    metadata?: Record<string, any>;
   }
   
   export interface DayPlanItem {

@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, BookOpen, Coffee, X } from 'lucide-react';
+import { Gamepad2, BookOpen, Coffee, X, ArrowLeft } from 'lucide-react';
+import { SnakeGame, Minesweeper, Tetris } from '@/components/games';
 import { StudySession } from '../types';
 import CelebrationModal from './modals/CelebrationModal';
+import GameModal from './modals/GameModal';
 
 interface BreakManagerProps {
   onStartBreak: (session: StudySession) => void;
@@ -22,6 +24,7 @@ export default function BreakManager({
   completedSession,
 }: BreakManagerProps) {
   const [showBreakOptions, setShowBreakOptions] = useState(true);
+  const [showGameModal, setShowGameModal] = useState(false);
   
   // Handle break completion state and visibility
   useEffect(() => {
@@ -47,10 +50,15 @@ export default function BreakManager({
   }
 
   const handleBreakOptionSelect = (option: 'game' | 'free' | 'coffee') => {
+    if (option === 'game') {
+      setShowGameModal(true);
+      return;
+    }
+    
     const breakSession: StudySession = {
       id: `break-${Date.now()}`,
       type: 'break',
-      subject: option === 'game' ? 'Game Break' : option === 'coffee' ? 'Coffee Break' : 'Free Study',
+      subject: option === 'coffee' ? 'Coffee Break' : 'Free Study',
       duration: breakDuration,
       break_duration: 0,
       isCurrent: true,
@@ -63,9 +71,66 @@ export default function BreakManager({
     onStartBreak(breakSession);
     onClose();
   };
+  
+  const handleGameSelect = (game: 'snake' | 'minesweeper' | 'tetris') => {
+    console.log('Game selected:', game);
+    // Close the game selection modal
+    setShowGameModal(false);
+    
+    // Create a break session with the selected game
+    const breakSession: StudySession = {
+      id: `break-${Date.now()}`,
+      type: 'break',
+      subject: `Game: ${game.charAt(0).toUpperCase() + game.slice(1)}`,
+      duration: breakDuration,
+      break_duration: 0,
+      isCurrent: true,
+      completed: false,
+      created_at: new Date(),
+      startTime: new Date(),
+      end_time: new Date(Date.now() + breakDuration * 60 * 1000),
+      notes: `Playing ${game} during break`,
+      metadata: { 
+        gameType: game,
+        showGame: true, // This will be used to show the game in the modal
+        showGameSelection: false // This will be used to control game selection visibility
+      }
+    };
+    
+    console.log('Creating break session with game:', breakSession);
+    onStartBreak(breakSession);
+  };
+  
+  // Handle going back to game selection
+  const handleBackToGames = () => {
+    if (!completedSession) return;
+    
+    const updatedSession: StudySession = {
+      ...completedSession,
+      metadata: {
+        ...completedSession.metadata,
+        showGame: false,
+        showGameSelection: true,
+        gameType: undefined
+      }
+    };
+    
+
+    onStartBreak(updatedSession);
+  };
+
+  // Simple fallback component if no game is available
+  function TestGame() {
+    return (
+      <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+        <h2 className="text-xl font-bold">Game would render here</h2>
+      </div>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">
+
       {showBreakOptions && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -116,6 +181,142 @@ export default function BreakManager({
             </div>
           </motion.div>
         </motion.div>
+      )}
+      
+      <GameModal 
+        isOpen={showGameModal} 
+        onClose={() => {
+          console.log('GameModal onClose called');
+          setShowGameModal(false);
+        }}
+        onSelectGame={handleGameSelect}
+        currentSession={completedSession}
+      />
+      
+      {/* Show the game in the main BreakManager modal if we have a game to show */}
+      {completedSession?.metadata?.showGameSelection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Select a Game</h2>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <GameModal 
+              isOpen={true}
+              onClose={onClose}
+              onSelectGame={handleGameSelect}
+              currentSession={completedSession}
+            />
+          </div>
+        </div>
+      )}
+      {completedSession?.metadata?.showGame && !showGameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="w-full max-w-4xl bg-white rounded-2xl p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                {completedSession.subject}
+              </h2>
+              <button
+                onClick={() => {
+                  // Clear the game from the session metadata to go back to game selection
+                  if (completedSession?.metadata?.showGame) {
+                    const updatedSession = {
+                      ...completedSession,
+                      metadata: {
+                        ...completedSession.metadata,
+                        showGame: false,
+                        gameType: undefined
+                      }
+                    };
+                    // Update the current session to clear the game
+                    if (onStartBreak) {
+                      onStartBreak(updatedSession);
+                    }
+                  } else {
+                    // If no game is active, close the modal
+                    onClose();
+                  }
+                }}
+                className="text-gray-400 hover:text-gray-600"
+                title="Back to game selection"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="w-full">
+              {(() => {
+                console.log('Rendering game type:', completedSession.metadata?.gameType);
+                console.log('Session metadata:', completedSession.metadata);
+                
+                switch(completedSession.metadata?.gameType) {
+                  case 'snake':
+                    return (
+                      <div className="w-full max-w-md mx-auto">
+                        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                          <p className="font-medium">Game Mode: Snake</p>
+                          <p className="text-xs text-yellow-700">Playing in break session</p>
+                        </div>
+                        <SnakeGame onGameOver={(score: number) => {
+                          console.log('Game over! Score:', score);
+                        }} />
+                      </div>
+                    );
+                  case 'minesweeper':
+                    return (
+                      <div className="w-full overflow-auto">
+                        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                          <p className="font-medium">Game Mode: Minesweeper</p>
+                          <p className="text-xs text-yellow-700">Playing in break session</p>
+                        </div>
+                        <div className="w-full flex justify-center">
+                          <Minesweeper onGameOver={(score: number) => {
+                            console.log('Minesweeper game over! Score:', score);
+                          }} />
+                        </div>
+                      </div>
+                    );
+                  case 'tetris':
+                    return (
+                      <div className="w-full overflow-auto">
+                        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                          <p className="font-medium">Game Mode: Tetris</p>
+                          <p className="text-xs text-yellow-700">Playing in break session</p>
+                        </div>
+                        <div className="w-full flex justify-center">
+                          <Tetris onGameEnd={(score: number) => {
+                            console.log('Tetris game over! Score:', score);
+                          }} />
+                        </div>
+                      </div>
+                    );
+                  default:
+                    console.warn('Unknown game type:', completedSession.metadata?.gameType);
+                    return (
+                      <div className="w-full max-w-md mx-auto">
+                        <TestGame />
+                      </div>
+                    );
+                }
+              })()}
+              
+              <div className="mt-4 text-center">
+                <button
+                  onClick={onClose}
+                  className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" /> Back to study
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </AnimatePresence>
   );

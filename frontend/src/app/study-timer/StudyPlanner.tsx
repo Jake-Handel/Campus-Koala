@@ -466,6 +466,7 @@ export default function StudyPlanner() {
   // Handle break start
   const handleStartBreak = (breakSession: StudySession) => {
     console.group('handleStartBreak');
+    console.log('Starting break with session:', breakSession);
     
     // Close any open modals
     setShowCelebration(false);
@@ -474,29 +475,42 @@ export default function StudyPlanner() {
     
     // Calculate break duration as 1/3 of the study session duration
     const studyDuration = currentSession?.duration || newStudySession.duration;
-    const breakDuration = Math.max(1, Math.floor(studyDuration / 3)); // Ensure at least 1 minute
+    const breakDuration = breakSession.duration || Math.max(1, Math.floor(studyDuration / 3)); // Use provided duration or calculate
     
     console.log(`Starting break: ${breakDuration} minutes`);
     
-    // Create a proper break session
+    // Create a proper break session, preserving any metadata from the break session
     const breakSessionToStart: StudySession = {
-      ...breakSession,
-      id: `break-${Date.now()}`,
+      ...breakSession, // This includes any game metadata
+      id: breakSession.id || `break-${Date.now()}`,
       type: 'break',
-      subject: 'Break',
+      subject: breakSession.subject || 'Break',
       duration: breakDuration,
       break_duration: 0,
       isCurrent: true,
       completed: false,
-      created_at: new Date(),
+      created_at: breakSession.created_at || new Date(),
       startTime: new Date(),
       end_time: new Date(Date.now() + breakDuration * 60 * 1000), // Set proper end time
-      notes: ''
+      notes: breakSession.notes || ''
     };
     
-    // Start the break session first
+    console.log('Break session to start:', breakSessionToStart);
+    
+    // Update the current session with the new break session
+    setCurrentSession(breakSessionToStart);
+    
+    // Start the break session
     startSession(breakSessionToStart);
     setIsInBreakFlow(true);
+    
+    // If this is a game break, ensure the BreakManager stays open
+    if (breakSession.metadata?.showGame) {
+      console.log('Game break detected, keeping BreakManager open');
+      setShowBreakManager(true);
+    }
+    
+    console.groupEnd();
   };
 
   return (
@@ -582,20 +596,33 @@ export default function StudyPlanner() {
           {/* Single source of truth for BreakManager */}
           {showBreakManager && currentSession?.type === 'break' && !currentSession.completed && (
             <BreakManager
-              key="break-manager"
+              key={`break-manager-${currentSession.id}`}
               isBreakComplete={false}
               onStartBreak={(breakSession) => {
-                if (currentSession) {
-                  setCurrentSession({...currentSession, isCurrent: false});
-                }
-                handleStartBreak(breakSession);
+                console.log('BreakManager onStartBreak called with:', breakSession);
+                // Update the current session with the new break session data
+                const updatedSession = {
+                  ...currentSession,
+                  ...breakSession,
+                  isCurrent: true,
+                  metadata: {
+                    ...currentSession.metadata,
+                    ...breakSession.metadata
+                  }
+                };
+                setCurrentSession(updatedSession);
+                handleStartBreak(updatedSession);
               }}
               onClose={() => {
-                setShowBreakManager(false);
-                setCurrentSession(currentSession);
-                setTimeRemaining(currentSession.duration * 60);
+                console.log('BreakManager onClose called');
+                // Only close the BreakManager if we're not in a game break
+                if (!currentSession?.metadata?.showGame) {
+                  setShowBreakManager(false);
+                  setCurrentSession(currentSession);
+                  setTimeRemaining(currentSession.duration * 60);
+                }
               }}
-              breakDuration={Math.max(1, Math.floor((currentSession?.duration || newStudySession.duration) / 3))}
+              breakDuration={currentSession.duration || Math.max(1, Math.floor((currentSession?.duration || newStudySession.duration) / 3))}
               completedSession={currentSession}
             />
           )}
