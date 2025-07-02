@@ -5,7 +5,6 @@ import { useTheme } from 'next-themes';
 import 'react-tooltip/dist/react-tooltip.css';
 import { Tooltip } from 'react-tooltip';
 import { motion } from 'framer-motion';
-import { twMerge } from 'tailwind-merge';
 import moment from 'moment';
 import dynamic from 'next/dynamic';
 import type { View, ToolbarProps, Components, Calendar as BigCalendar } from 'react-big-calendar';
@@ -13,6 +12,7 @@ import { momentLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { FaCalendarAlt, FaCalendarWeek, FaCalendarDay, FaListUl, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { Event } from './types';
+import { twMerge } from 'tailwind-merge';
 
 const Calendar = dynamic<BigCalendar<Event, object>>(
   async () => {

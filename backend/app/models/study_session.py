@@ -1,15 +1,24 @@
 from datetime import datetime
 from app import db
+from app.models.user import User
 
 class StudySession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
     duration = db.Column(db.Integer)  # Duration in minutes
-    game_time_earned = db.Column(db.Integer)  # Game time earned in minutes
+    subject = db.Column(db.String(100))
+    notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship with User
+    user = db.relationship('User', back_populates='study_sessions')
+
+    def __repr__(self):
+        return f'<StudySession {self.id} - {self.subject}>'
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -17,6 +26,10 @@ class StudySession(db.Model):
             'start_time': self.start_time.isoformat(),
             'end_time': self.end_time.isoformat() if self.end_time else None,
             'duration': self.duration,
-            'game_time_earned': self.game_time_earned,
-            'created_at': self.created_at.isoformat()
+            'subject': self.subject,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'type': 'study',  # Add default type
+            'completed': self.end_time is not None  # Mark as completed if end_time exists
         }

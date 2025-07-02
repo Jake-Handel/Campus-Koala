@@ -23,10 +23,11 @@ class Config:
     
     # CORS Configuration
     CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000', 'http://localhost:5173']
-    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
     CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
     CORS_SUPPORTS_CREDENTIALS = True
-    CORS_EXPOSE_HEADERS = ['Content-Range', 'X-Content-Range']
+    CORS_EXPOSE_HEADERS = ['Content-Range', 'X-Content-Range', 'Authorization']
+    CORS_ALLOW_CREDENTIALS = True
 
 class DevelopmentConfig(Config):
     DEBUG = True

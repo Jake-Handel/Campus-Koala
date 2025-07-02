@@ -191,7 +191,7 @@ export default function DashboardPage() {
           </button>
           
           <button 
-            onClick={() => router.push('/planner')} 
+            onClick={() => router.push('/study-timer')} 
             className="group relative overflow-hidden rounded-xl p-4 border-none shadow-md transition-all duration-300 text-white font-medium bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-600 hover:to-teal-500 hover:shadow-lg transform hover:-translate-y-0.5 hover:scale-102"
           >
             <div className="flex items-center">
