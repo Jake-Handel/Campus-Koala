@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Play, Pause, RotateCcw } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 interface TetrisProps {
   onGameEnd?: (score: number) => void;
@@ -31,6 +32,8 @@ const TETROMINOES: Record<TetrominoType, Tetromino> = {
 };
 
 export default function Tetris({ onGameEnd }: TetrisProps) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [board, setBoard] = useState<Array<Array<string | null>>>(() => 
     Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null))
   );
@@ -312,23 +315,31 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
     
     return (
       <div 
-        className="grid bg-gray-900 border-2 border-gray-700 w-full"
+        className={`w-full border-2 transition-colors duration-200 ${
+          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}
         style={{
+          display: 'grid',
           gridTemplateColumns: `repeat(${BOARD_WIDTH}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${BOARD_HEIGHT}, minmax(0, 1fr))`,
           aspectRatio: `${BOARD_WIDTH}/${BOARD_HEIGHT}`,
           maxWidth: '100%',
-          margin: '0 auto'
+          margin: '0 auto',
+          backgroundColor: isDarkMode ? '#111827' : '#f9fafb'
         }}
       >
         {displayBoard.flat().map((cell, index) => (
           <div
             key={index}
-            className="border border-gray-800"
+            className={`transition-colors duration-200 ${
+              isDarkMode ? 'border-gray-800' : 'border-gray-100'
+            }`}
             style={{
-              width: CELL_SIZE,
-              height: CELL_SIZE,
+              width: '100%',
+              height: '100%',
+              borderWidth: '1px',
               backgroundColor: cell || 'transparent',
+              boxSizing: 'border-box'
             }}
           />
         ))}
@@ -345,7 +356,11 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
     
     return (
       <div 
-        className="border-2 border-gray-700 bg-gray-900 p-2"
+        className={`border-2 p-2 transition-colors duration-200 ${
+          isDarkMode 
+            ? 'border-gray-700 bg-gray-900' 
+            : 'border-gray-200 bg-gray-50'
+        }`}
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${previewSize}, ${CELL_SIZE * 0.8}px)`,
@@ -361,11 +376,15 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
           return (
             <div
               key={index}
-              className="border border-gray-800"
+              className={`transition-colors duration-200 ${
+                isDarkMode ? 'border-gray-800' : 'border-gray-100'
+              }`}
               style={{
-                width: CELL_SIZE * 0.8,
-                height: CELL_SIZE * 0.8,
+                width: '100%',
+                height: '100%',
+                borderWidth: '1px',
                 backgroundColor: cell ? color : 'transparent',
+                boxSizing: 'border-box'
               }}
             />
           );
@@ -376,8 +395,12 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
 
   if (!gameStarted) {
     return (
-      <div className="flex flex-col items-center justify-center bg-gray-900 text-white p-4 py-16">
-        <div className="max-w-md w-full bg-gray-800 p-8 rounded-lg shadow-lg">
+      <div className={`flex flex-col items-center justify-center p-4 py-16 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}>
+        <div className={`max-w-md w-full p-8 rounded-lg shadow-lg transition-colors duration-200 ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white border border-gray-200'
+        }`}>
           <h1 className="text-4xl font-bold mb-6 text-center">Tetris</h1>
           <button
             onClick={startNewGame}
@@ -388,7 +411,9 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-4">How to Play</h2>
             <div className="grid grid-cols-2 gap-2 text-left">
-              <div className="bg-gray-700 p-3 rounded">
+              <div className={`p-3 rounded ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <p className="font-medium">← →</p>
                 <p className="text-sm text-gray-300">Move left/right</p>
               </div>
@@ -416,11 +441,15 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
   }
 
   return (
-    <div className="bg-gray-900 text-white p-4 py-8">
+    <div className={`p-4 py-8 transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+    }`}>
       <div className="w-full max-w-3xl mx-auto py-8">
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left Column - Game Board */}
-          <div className="w-full max-w-[300px] mx-auto bg-gray-800 p-4 rounded-lg">
+          <div className={`w-full max-w-[300px] mx-auto p-4 rounded-lg transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white border border-gray-200 shadow-sm'
+          }`}>
             <div className="flex justify-between items-center mb-3">
               <div className="text-2xl font-bold">Score: {score}</div>
               <div className="flex gap-2">
@@ -441,7 +470,9 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
               </div>
             </div>
             
-            <div className="relative bg-gray-900 p-1 rounded overflow-hidden">
+            <div className={`relative p-1 rounded overflow-hidden transition-colors duration-200 ${
+              isDarkMode ? 'bg-gray-900' : 'bg-gray-100'
+            }`}>
               {renderBoard()}
               
               {gameOver && (
@@ -467,18 +498,26 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
           
           {/* Right Column - Game Info */}
           <div className="w-full max-w-[300px] mx-auto md:mx-0">
-            <div className="bg-gray-800 p-4 rounded-lg mb-4">
+            <div className={`p-4 rounded-lg mb-4 transition-colors duration-200 ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white border border-gray-200 shadow-sm'
+            }`}>
               <h3 className="text-lg font-semibold mb-2 text-center">Next Piece</h3>
-              <div className="flex justify-center bg-gray-900 p-3 rounded">
+              <div className={`flex justify-center p-3 rounded transition-colors duration-200 ${
+                isDarkMode ? 'bg-gray-900' : 'bg-gray-100'
+              }`}>
                 {renderNextPiece()}
               </div>
             </div>
             
-            <div className="bg-gray-800 p-3 rounded-lg">
+            <div className={`p-3 rounded-lg transition-colors duration-200 ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white border border-gray-200 shadow-sm'
+            }`}>
               <h3 className="text-lg font-semibold mb-2">Controls</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="bg-gray-700 px-2 py-1 rounded w-8 text-center">← →</span>
+                  <span className={`px-2 py-1 rounded w-8 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100 border border-gray-200'
+                  }`}>← →</span>
                   <span>Move</span>
                 </div>
                 <div className="flex items-center gap-2">

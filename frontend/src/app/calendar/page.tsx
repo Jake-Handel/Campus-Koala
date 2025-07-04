@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { FiPlus, FiX } from 'react-icons/fi';
+import { useTheme } from 'next-themes';
 import type { ReactElement } from 'react';
 import { Event } from './types';
 
@@ -36,12 +37,20 @@ const eventCategories = [
 
 export default function CalendarPage(): ReactElement {
   const router = useRouter();
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'delete'>('create');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const isDarkMode = theme === 'dark';
   const [newEvent, setNewEvent] = useState<NewEvent>({
     title: '',
     start: '',
@@ -273,11 +282,21 @@ export default function CalendarPage(): ReactElement {
     });
   };
 
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen p-4">
+    <div className={`min-h-screen p-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex justify-center items-center">
-          <h1 className="text-3xl font-bold bg-clip-text text-indigo-500">Calendar</h1>
+          <h1 className={`text-3xl font-bold bg-clip-text ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
+            Calendar
+          </h1>
         </div>
 
         <div className="flex justify-between items-center mb-4">
@@ -286,14 +305,20 @@ export default function CalendarPage(): ReactElement {
               setIsModalOpen(true);
               setModalType('create');
             }}
-            className="inline-flex items-center px-5 py-3 rounded-xl border-2 border-indigo-500 text-sm font-medium text-indigo-600 bg-indigo-200 backdrop-blur-sm hover:bg-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
+            className={`inline-flex items-center px-5 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+              isDarkMode 
+                ? 'border-indigo-500 text-indigo-300 bg-indigo-900/30 hover:bg-indigo-800/50 focus:ring-indigo-400' 
+                : 'border-indigo-500 text-indigo-600 bg-indigo-200 hover:bg-indigo-300/50 focus:ring-indigo-500'
+            } focus:outline-none focus:ring-2 focus:ring-offset-2`}
           >
             <FiPlus className="mr-2 h-5 w-5" aria-hidden="true" />
             Add Event
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow">
+        <div className={`rounded-lg shadow-lg overflow-hidden transition-all duration-200 ${
+          isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+        }`}>
           <div className="h-[80vh]">
             <CalendarComponent
               events={events}
@@ -311,20 +336,30 @@ export default function CalendarPage(): ReactElement {
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/30 overflow-y-auto z-50"
             >
-              <div className="flex items-center justify-center min-h-screen">
+              <div className="flex items-center justify-center min-h-screen p-4">
                 <motion.div
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
-                  className="bg-white rounded-xl shadow-xl p-8 w-full max-w-2xl mx-4"
+                  className={`rounded-xl shadow-xl p-6 sm:p-8 w-full max-w-2xl mx-auto ${
+                    isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+                  }`}
                 >
-                  <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-blue-500">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className={`text-2xl font-bold bg-clip-text ${
+                      isDarkMode 
+                        ? 'text-transparent bg-gradient-to-r from-indigo-400 to-blue-400' 
+                        : 'text-transparent bg-gradient-to-r from-indigo-500 to-blue-500'
+                    }`}>
                       {modalType === 'create' ? 'Create Event' : modalType === 'edit' ? 'Edit Event' : 'Delete Event'}
                     </h2>
                     <button
                       onClick={handleModalClose}
-                      className="text-gray-400 hover:text-gray-600"
+                      className={`p-1 rounded-full ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700 hover:text-gray-200' 
+                          : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                      } transition-colors`}
                     >
                       <FiX className="h-6 w-6" />
                     </button>
@@ -333,8 +368,10 @@ export default function CalendarPage(): ReactElement {
                   {modalType === 'create' || modalType === 'edit' ? (
                     <form className="space-y-6">
                       <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-800 mb-2">
-                          Title
+                        <label htmlFor="title" className={`block text-sm font-medium mb-1 ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
+                          Event Title
                         </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
                           <input
@@ -348,14 +385,20 @@ export default function CalendarPage(): ReactElement {
                                 setSelectedEvent(prev => prev ? { ...prev, title: e.target.value } : null);
                               }
                             }}
-                            className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                            className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                             required
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label htmlFor="start" className="block text-sm font-medium text-gray-800 mb-2">
+                        <label htmlFor="start-time" className={`block text-sm font-medium mb-1 ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
                           Start Time
                         </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
@@ -383,7 +426,11 @@ export default function CalendarPage(): ReactElement {
                                     setSelectedEvent({ ...selectedEvent, start: newStart });
                                   }
                                 }}
-                                className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                                 required
                               />
                             </div>
@@ -410,7 +457,11 @@ export default function CalendarPage(): ReactElement {
                                     setSelectedEvent({ ...selectedEvent, start: newStart });
                                   }
                                 }}
-                                className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                                 required
                               />
                             </div>
@@ -419,8 +470,10 @@ export default function CalendarPage(): ReactElement {
                       </div>
 
                       <div>
-                        <label htmlFor="end" className="block text-sm font-medium text-gray-800 mb-2">
-                          End Time
+                        <label htmlFor="end-date" className={`block text-sm font-medium mb-1 ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
+                          End Date
                         </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
                           <div className="flex space-x-2">
@@ -452,7 +505,11 @@ export default function CalendarPage(): ReactElement {
                                     setSelectedEvent({ ...selectedEvent, end: newEnd });
                                   }
                                 }}
-                                className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                                 required
                               />
                             </div>
@@ -479,7 +536,11 @@ export default function CalendarPage(): ReactElement {
                                     setSelectedEvent({ ...selectedEvent, end: newEnd });
                                   }
                                 }}
-                                className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                                 required
                               />
                             </div>
@@ -488,9 +549,11 @@ export default function CalendarPage(): ReactElement {
                       </div>
 
                       <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-gray-800 mb-2">
-                          Category
-                        </label>
+                        <label htmlFor="category" className={`block text-sm font-medium mb-1 ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
+                            Category
+                          </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
                           <select
                             id="category"
@@ -502,7 +565,11 @@ export default function CalendarPage(): ReactElement {
                                 setSelectedEvent(prev => prev ? { ...prev, category: e.target.value } : null);
                               }
                             }}
-                            className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                            className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                           >
                             {eventCategories.map(cat => (
                               <option key={cat.name} value={cat.name}>
@@ -514,9 +581,11 @@ export default function CalendarPage(): ReactElement {
                       </div>
 
                       <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-gray-800 mb-2">
-                          Location (optional)
-                        </label>
+                        <label htmlFor="location" className={`block text-sm font-medium mb-1 ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
+                            Location (Optional)
+                          </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
                           <input
                             type="text"
@@ -529,15 +598,21 @@ export default function CalendarPage(): ReactElement {
                                 setSelectedEvent(prev => prev ? { ...prev, location: e.target.value } : null);
                               }
                             }}
-                            className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                            className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-800 mb-2">
-                          Description (optional)
-                        </label>
+                        <label htmlFor="description" className={`block text-sm font-medium mb-1 ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
+                            Description (Optional)
+                          </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
                           <textarea
                             id="description"
@@ -550,7 +625,11 @@ export default function CalendarPage(): ReactElement {
                                 setSelectedEvent(prev => prev ? { ...prev, description: e.target.value } : null);
                               }
                             }}
-                            className="block w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-white/50 backdrop-blur-sm placeholder:text-gray-400 sm:text-sm"
+                            className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
+                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                            }`}
                           />
                         </div>
                       </div>
@@ -594,6 +673,11 @@ export default function CalendarPage(): ReactElement {
                       <h3 className="text-xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-blue-500 mb-6">
                         Are you sure you want to delete this event?
                       </h3>
+                      <p className={`text-sm mb-4 ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                        }`}>
+                        Are you sure you want to delete this event? This action cannot be undone.
+                      </p>
                       <div className="mt-8 flex justify-center space-x-4">
                         <button
                           type="button"

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, RotateCcw, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 type Position = {
   x: number;
@@ -16,6 +17,8 @@ const CELL_SIZE = 20;
 const INITIAL_SPEED = 150;
 
 export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) => void }) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [snake, setSnake] = useState<Position[]>([{ x: 10, y: 10 }]);
   const [food, setFood] = useState<Position>({ x: 5, y: 5 });
   const [direction, setDirection] = useState<Direction>('RIGHT');
@@ -195,7 +198,7 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw grid
-    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeStyle = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : '#e5e7eb';
     ctx.lineWidth = 0.5;
     
     for (let i = 0; i <= GRID_SIZE; i++) {
@@ -215,7 +218,9 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
     // Draw snake
     snake.forEach((segment, index) => {
       const isHead = index === 0;
-      ctx.fillStyle = isHead ? '#10b981' : '#34d399';
+      ctx.fillStyle = isHead 
+        ? (isDarkMode ? '#10b981' : '#059669')
+        : (isDarkMode ? '#34d399' : '#10b981');
       
       // Add rounded corners to snake segments
       const x = segment.x * CELL_SIZE;
@@ -261,20 +266,29 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
     });
 
     // Draw food
-    ctx.fillStyle = '#ef4444';
     const foodRadius = CELL_SIZE / 2;
-    ctx.beginPath();
-    ctx.arc(
-      food.x * CELL_SIZE + foodRadius,
-      food.y * CELL_SIZE + foodRadius,
-      foodRadius * 0.8,
-      0,
-      Math.PI * 2
+    const foodX = food.x * CELL_SIZE + foodRadius;
+    const foodY = food.y * CELL_SIZE + foodRadius;
+    
+    // Food gradient
+    const gradient = ctx.createRadialGradient(
+      foodX - foodRadius * 0.3, 
+      foodY - foodRadius * 0.3, 
+      0, 
+      foodX, 
+      foodY, 
+      foodRadius
     );
+    gradient.addColorStop(0, isDarkMode ? '#ef4444' : '#dc2626');
+    gradient.addColorStop(1, isDarkMode ? '#b91c1c' : '#ef4444');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(foodX, foodY, foodRadius * 0.9, 0, Math.PI * 2);
     ctx.fill();
     
     // Add shine to food
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.7)';
     ctx.beginPath();
     ctx.arc(
       food.x * CELL_SIZE + foodRadius * 0.6,
@@ -315,11 +329,11 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg">
+    <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg transition-colors duration-200">
       <div className="flex justify-between items-center w-full mb-4">
-        <div className="bg-white/80 px-4 py-2 rounded-lg shadow-sm">
-          <span className="font-semibold text-gray-700">Score: </span>
-          <span className="text-emerald-600 font-bold">{score}</span>
+        <div className="bg-white/80 dark:bg-gray-700/80 px-4 py-2 rounded-lg shadow-sm backdrop-blur-sm">
+          <span className="font-semibold text-gray-700 dark:text-gray-200">Score: </span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{score}</span>
         </div>
         
         <div className="flex space-x-2">
@@ -327,14 +341,16 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
             onClick={() => setIsPaused(!isPaused)}
             disabled={gameOver}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              gameOver ? 'bg-gray-200 text-gray-400' : 'bg-white/80 hover:bg-white text-gray-700 shadow-sm'
+              gameOver 
+                ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500' 
+                : 'bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 shadow-sm'
             }`}
           >
             {isPaused ? 'Resume' : 'Pause'}
           </button>
           <button
             onClick={initGame}
-            className="px-4 py-2 bg-white/80 hover:bg-white text-gray-700 rounded-lg font-medium transition-colors shadow-sm flex items-center"
+            className="px-4 py-2 bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors shadow-sm flex items-center"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
             Reset
@@ -347,14 +363,14 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
           ref={canvasRef}
           width={GRID_SIZE * CELL_SIZE}
           height={GRID_SIZE * CELL_SIZE}
-          className="bg-white rounded-xl border-2 border-gray-200 shadow-inner"
+          className="bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 shadow-inner transition-colors duration-200"
         />
         
         {!gameStarted && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-            <div className="bg-white p-6 rounded-xl text-center max-w-xs">
-              <h3 className="text-xl font-bold mb-2">Snake Game</h3>
-              <p className="text-gray-600 mb-4">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 rounded-xl">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl text-center max-w-xs border border-gray-200 dark:border-gray-700 shadow-xl">
+              <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">Snake Game</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Use arrow keys to move. Eat the red food to grow and earn points!
               </p>
               <button
@@ -368,10 +384,10 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
         )}
         
         {gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-            <div className="bg-white p-6 rounded-xl text-center">
-              <h3 className="text-xl font-bold mb-2">Game Over!</h3>
-              <p className="text-gray-600 mb-4">Your score: {score}</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 rounded-xl">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl text-center border border-gray-200 dark:border-gray-700 shadow-xl">
+              <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">Game Over!</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Your score: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{score}</span></p>
               <button
                 onClick={initGame}
                 className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors"
@@ -383,8 +399,8 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
         )}
         
         {isPaused && !gameOver && gameStarted && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
-            <div className="bg-white/90 px-6 py-3 rounded-lg font-medium text-gray-700">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 dark:bg-black/50 rounded-xl">
+            <div className="bg-white/90 dark:bg-gray-800/90 px-6 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 shadow-lg">
               Paused
             </div>
           </div>
@@ -396,7 +412,7 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
         <div></div>
         <button
           onClick={() => handleSwipe('UP')}
-          className="bg-white/80 hover:bg-white p-4 rounded-lg shadow-md flex items-center justify-center"
+          className="bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600 p-4 rounded-lg shadow-md flex items-center justify-center text-gray-700 dark:text-gray-200 transition-colors"
         >
           <ArrowUp className="w-6 h-6 text-gray-700" />
         </button>
@@ -404,16 +420,16 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
         
         <button
           onClick={() => handleSwipe('LEFT')}
-          className="bg-white/80 hover:bg-white p-4 rounded-lg shadow-md flex items-center justify-center"
+          className="bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600 p-4 rounded-lg shadow-md flex items-center justify-center text-gray-700 dark:text-gray-200 transition-colors"
         >
           <ArrowLeft className="w-6 h-6 text-gray-700" />
         </button>
-        <div className="bg-white/50 rounded-lg shadow-inner flex items-center justify-center">
-          <span className="text-xs text-gray-500 font-medium">SWIPE</span>
+        <div className="bg-white/50 dark:bg-gray-700/50 rounded-lg shadow-inner flex items-center justify-center">
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">SWIPE</span>
         </div>
         <button
           onClick={() => handleSwipe('RIGHT')}
-          className="bg-white/80 hover:bg-white p-4 rounded-lg shadow-md flex items-center justify-center"
+          className="bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600 p-4 rounded-lg shadow-md flex items-center justify-center text-gray-700 dark:text-gray-200 transition-colors"
         >
           <ArrowRight className="w-6 h-6 text-gray-700" />
         </button>
@@ -421,14 +437,14 @@ export default function SnakeGame({ onGameOver }: { onGameOver: (score: number) 
         <div></div>
         <button
           onClick={() => handleSwipe('DOWN')}
-          className="bg-white/80 hover:bg-white p-4 rounded-lg shadow-md flex items-center justify-center"
+          className="bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600 p-4 rounded-lg shadow-md flex items-center justify-center text-gray-700 dark:text-gray-200 transition-colors"
         >
           <ArrowDown className="w-6 h-6 text-gray-700" />
         </button>
         <div></div>
       </div>
       
-      <div className="mt-4 text-xs text-gray-500 text-center">
+      <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
         <p>Press SPACE to {isPaused ? 'resume' : 'pause'}</p>
       </div>
     </div>

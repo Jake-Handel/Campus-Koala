@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTheme } from 'next-themes';
 import { AnimatePresence } from 'framer-motion';
 import { Play, Plus, X, Clock, Coffee, CheckCircle, RotateCw, ChevronDown, ChevronUp, Gamepad2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -19,6 +20,7 @@ const DEFAULT_STUDY_DURATION = 25;
 const DEFAULT_BREAK_DURATION = 5;
 
 export default function StudyPlanner() {
+  const { theme } = useTheme();
   // State for modals and UI
   const [showTimerOptions, setShowTimerOptions] = useState(false);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
@@ -514,19 +516,18 @@ export default function StudyPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent dark:bg-gray-900 p-4 md:p-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">FocusFlow</h1>
-          <p className="text-gray-600">Stay focused and track your study sessions</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">FocusFlow</h1>
+          <p className="text-gray-600 dark:text-gray-300">Stay focused and track your study sessions</p>
         </header>
         
         {/* Main Content */}
         <div className="space-y-6">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Column - Timer (70% width) */}
-            <div className="w-full lg:w-8/12 bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="w-full lg:w-8/12 bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transition-colors duration-200">
               <TimerDisplay
                 currentSession={currentSession}
                 timeRemaining={timeRemaining}
@@ -558,6 +559,7 @@ export default function StudyPlanner() {
             <TimerOptionsModal
               key="timer-options"
               isOpen={showTimerOptions}
+              isDark={theme === 'dark'}
               onClose={() => setShowTimerOptions(false)}
               onStartFreeStudy={startFreeStudy}
               onStartPlannedSession={startPlannedSession}
