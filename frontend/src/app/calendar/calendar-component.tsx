@@ -58,6 +58,7 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
   const [mounted, setMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('month');
+  const isDarkMode = theme === 'dark';
 
   useEffect(() => {
     setMounted(true);
@@ -69,7 +70,11 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
 
   // Format the current month and year
   const formatCurrentMonth = () => {
-    return moment(currentDate).format('MMMM YYYY');
+    return (
+      <span className={isDarkMode ? 'text-white' : 'text-indigo-700'}>
+        {moment(currentDate).format('MMMM YYYY')}
+      </span>
+    );
   };
 
   const handleNavigate = (action: 'TODAY' | 'PREV' | 'NEXT' | 'DATE', date?: Date) => {
@@ -138,8 +143,10 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
     return {
       className: 'transition-colors',
       style: {
-        backgroundColor: isToday ? '#ffffff' : 'transparent',
-        color: '#000000'
+        backgroundColor: isToday 
+          ? isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#ffffff'
+          : 'transparent',
+        color: isDarkMode ? '#e5e7eb' : '#1f2937'
       }
     };
   };
@@ -147,29 +154,59 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
   const calendarClasses = {
     // Calendar container
     wrapper: 'h-full flex flex-col',
-    container: 'bg-gradient-to-br from-purple-700 to-indigo-700 p-4 rounded-lg shadow-lg',
-    timeGutterHeader: 'text-center font-semibold text-white',
-    timeGutterWrapper: 'font-medium text-right pr-2 text-white',
+    container: isDarkMode 
+      ? 'bg-gradient-to-br from-gray-800 to-gray-900 p-4 rounded-lg shadow-lg' 
+      : 'bg-gradient-to-br from-purple-700 to-indigo-700 p-4 rounded-lg shadow-lg',
+    timeGutterHeader: isDarkMode 
+      ? 'text-center font-semibold text-gray-200' 
+      : 'text-center font-semibold text-white',
+    timeGutterWrapper: isDarkMode 
+      ? 'font-medium text-right pr-2 text-gray-300' 
+      : 'font-medium text-right pr-2 text-white',
     // Month view
-    monthView: 'divide-y divide-white/40',
+    monthView: isDarkMode 
+      ? 'divide-y divide-gray-700' 
+      : 'divide-y divide-white/40',
     // Header row
-    headerRow: 'bg-white/30 border-b border-white/40',
-    header: 'py-2 text-sm font-semibold text-indigo-700 text-center',
+    headerRow: isDarkMode 
+      ? 'bg-gray-800 border-b border-gray-700' 
+      : 'bg-white/30 border-b border-white/40',
+    header: isDarkMode 
+      ? 'py-2 text-sm font-semibold text-gray-300 text-center' 
+      : 'py-2 text-sm font-semibold text-indigo-700 text-center',
     // Day cells
-    dayCell: 'min-h-[100px] p-2 border-r border-white/40 relative',
+    dayCell: isDarkMode 
+      ? 'min-h-[100px] p-2 border-r border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-200' 
+      : 'min-h-[100px] p-2 border-r border-white/40 hover:bg-white/20 transition-colors duration-200',
     // Date numbers
-    dateNumber: 'text-sm text-gray-700 font-semibold',
-    todayNumber: 'bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200',
+    dateNumber: isDarkMode 
+      ? 'text-sm text-gray-300 font-semibold' 
+      : 'text-sm text-gray-700 font-semibold',
+    todayNumber: isDarkMode 
+      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200' 
+      : 'bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200',
     // Navigation buttons
-    button: 'px-4 py-2 text-sm bg-gradient-to-r from-purple-700 to-indigo-700 text-white border-none rounded-lg hover:from-purple-800 hover:to-indigo-800 transition-all duration-200 shadow-md hover:shadow-lg',
-    activeButton: 'bg-white text-indigo-700 border-white hover:bg-gray-100 shadow-md font-semibold',
+    button: isDarkMode 
+      ? 'px-4 py-2 text-sm bg-gray-700 text-white border-none rounded-lg hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg' 
+      : 'px-4 py-2 text-sm bg-gradient-to-r from-purple-700 to-indigo-700 text-white border-none rounded-lg hover:from-purple-800 hover:to-indigo-800 transition-all duration-200 shadow-md hover:shadow-lg',
+    activeButton: isDarkMode 
+      ? 'bg-white/10 text-white border-gray-600 hover:bg-white/20 shadow-md font-semibold' 
+      : 'bg-white text-indigo-700 border-white hover:bg-gray-100 shadow-md font-semibold',
     // Toolbar
-    toolbar: 'flex justify-between items-center p-4 text-indigo-700 rounded-t-lg shadow-md',
-    toolbarLabel: 'text-xl font-bold text-indigo-700',
-    currentMonth: 'text-2xl font-bold text-indigo-700 bg-clip-text text-center',
+    toolbar: isDarkMode 
+      ? 'flex justify-between items-center p-4 text-white rounded-t-lg shadow-md bg-gray-800' 
+      : 'flex justify-between items-center p-4 text-indigo-700 rounded-t-lg shadow-md bg-white/30',
+    toolbarLabel: isDarkMode 
+      ? 'text-xl font-bold text-white' 
+      : 'text-xl font-bold text-indigo-700',
+    currentMonth: isDarkMode 
+      ? 'text-2xl font-bold text-white' 
+      : 'text-2xl font-bold text-indigo-700',
     buttonGroup: 'flex gap-4',
     // Navigation icons
-    navIcon: 'text-lg text-indigo-700',
+    navIcon: isDarkMode 
+      ? 'text-lg text-white' 
+      : 'text-lg text-indigo-700',
   };
 
   const components: Components<Event, object> = {
@@ -312,9 +349,11 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={twMerge("h-full w-full", className)}
+      className={twMerge("h-full w-full", className, isDarkMode ? 'dark' : '')}
     >
-      <div className="calendar-modernized h-full">
+      <div className={`calendar-modernized h-full ${
+        isDarkMode ? 'rbc-theme-dark' : ''
+      }`}>
         <Calendar
           localizer={localizer}
           events={events}

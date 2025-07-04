@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { Task } from '@/types/Task';
 import moment from 'moment';
 import { FiClipboard } from 'react-icons/fi';
@@ -27,6 +28,9 @@ interface Event {
 }
 
 export default function DashboardPage() {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDark = theme === 'dark';
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -166,10 +170,12 @@ export default function DashboardPage() {
   }, []); // Empty dependency array to run only on mount
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-4 bg-transparent dark:bg-gray-900 transition-colors duration-200">
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex justify-center items-center">
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-indigo-500">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+            Dashboard
+          </h1>
         </div>
 
         {/* Quick Actions */}
@@ -226,52 +232,65 @@ export default function DashboardPage() {
         {/* Task Stats and Recent Tasks */}
         <div className="grid gap-4 md:grid-cols-2">
           {/* Task Stats */}
-          <div className="card p-6 bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 border border-indigo-100 overflow-hidden relative group">
-            <div className="absolute top-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mt-12 blur-2xl" aria-hidden="true" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-indigo-500/5 rounded-full -mr-5 -mb-5 blur-2xl" aria-hidden="true" />
-            <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all duration-300"></div>
-            <h3 className="text-xl font-bold mb-8 flex items-center text-indigo-700">
+          <div className="card p-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden relative group bg-white dark:bg-gray-800/80 dark:border dark:border-gray-700/70">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:from-indigo-500/10 dark:to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true"></div>
+            <div className="absolute top-0 left-0 w-24 h-24 bg-indigo-500/5 dark:bg-indigo-400/10 rounded-full -ml-12 -mt-12 blur-2xl" aria-hidden="true" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-indigo-500/5 dark:bg-indigo-400/10 rounded-full -mr-5 -mb-5 blur-2xl" aria-hidden="true" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 dark:bg-indigo-400/20 rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 dark:group-hover:bg-indigo-400/30 transition-all duration-300"></div>
+            <h3 className="text-xl font-bold mb-8 flex items-center text-indigo-700 dark:text-indigo-300">
               <FiCalendar className="w-6 h-6 mr-3" />
               Task Stats
             </h3>
             <div className="flex gap-8">
               {/* Left Side - Stats Boxes */}
               <div className="space-y-3 flex-1 w-1/2 relative">
-                <div className="bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="bg-white/5 dark:bg-gray-700/30 backdrop-blur-sm p-4 rounded-lg border border-white/10 dark:border-gray-600/30 hover:border-white/20 dark:hover:border-gray-500/50 transition-all duration-300">
                   <div className="flex items-center justify-between gap-8">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                        <FiList className="w-5 h-5 text-indigo-500" />
-                      </div>
-                      <span className="text-sm font-medium text-indigo-800 ml-3">Total Tasks</span>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      isDark ? 'bg-indigo-500/30' : 'bg-indigo-500/20'
+                    }`}>
+                      <FiList className={`w-5 h-5 ${isDark ? 'text-indigo-300' : 'text-indigo-500'}`} />
                     </div>
-                    <span className="text-xl font-bold text-indigo-900">{tasks.length}</span>
+                      <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200 ml-3">Total Tasks</span>
+                    </div>
+                    <span className={`text-xl font-bold ${
+                      isDark ? 'text-white' : 'text-indigo-900'
+                    }`}>{tasks.length}</span>
                   </div>
                 </div>
 
-                <div className="bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="bg-white/5 dark:bg-gray-700/30 backdrop-blur-sm p-4 rounded-lg border border-white/10 dark:border-gray-600/30 hover:border-white/20 dark:hover:border-gray-500/50 transition-all duration-300">
                   <div className="flex items-center justify-between gap-8">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
-                        <FiAlertCircle className="w-5 h-5 text-red-500" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isDark ? 'bg-red-500/30' : 'bg-red-500/20'
+                      }`}>
+                        <FiAlertCircle className={`w-5 h-5 ${isDark ? 'text-red-300' : 'text-red-500'}`} />
                       </div>
-                      <span className="text-sm font-medium text-red-800 ml-3">High Priority</span>
+                      <span className="text-sm font-medium text-red-800 dark:text-red-300 ml-3">High Priority</span>
                     </div>
-                    <span className="text-xl font-bold text-red-900">
+                    <span className={`text-xl font-bold ${
+                      isDark ? 'text-red-300' : 'text-red-900'
+                    }`}>
                       {tasks.filter(t => t.priority === 3).length}
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="bg-white/5 dark:bg-gray-700/30 backdrop-blur-sm p-4 rounded-lg border border-white/10 dark:border-gray-600/30 hover:border-white/20 dark:hover:border-gray-500/50 transition-all duration-300">
                   <div className="flex items-center justify-between gap-8">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <FiCheckCircle className="w-5 h-5 text-emerald-500" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isDark ? 'bg-emerald-500/30' : 'bg-emerald-500/20'
+                      }`}>
+                        <FiCheckCircle className={`w-5 h-5 ${isDark ? 'text-emerald-300' : 'text-emerald-500'}`} />
                       </div>
-                      <span className="text-sm font-medium text-emerald-800 ml-3">Completed</span>
+                      <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300 ml-3">Completed</span>
                     </div>
-                    <span className="text-xl font-bold text-emerald-900">
+                    <span className={`text-xl font-bold ${
+                      isDark ? 'text-emerald-300' : 'text-emerald-900'
+                    }`}>
                       {tasks.filter(t => t.completed).length}
                     </span>
                   </div>
@@ -315,77 +334,116 @@ export default function DashboardPage() {
                   }}>
                     {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}%
                   </span>
-                  <div className="text-sm text-gray-600 mt-2">Completion Rate</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Completion Rate</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Recent Tasks */}
-          <div className="card p-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden relative group">
-            <div className="absolute top-0 left-0 w-24 h-24 bg-emerald-500/5 rounded-full -ml-12 -mt-12 blur-2xl" aria-hidden="true" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -mr-5 -mb-5 blur-2xl" aria-hidden="true" />
-            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full -mr-8 -mt-8 group-hover:bg-emerald-500/20 transition-all duration-300"></div>
-            <h3 className="text-xl font-bold mb-8 flex items-center text-emerald-700">
-              <FiClock className="w-6 h-6 mr-3" />
-              Recent Tasks
-            </h3>
-            <div className="space-y-3">
-              {tasks
-                .sort((a, b) => new Date(b.due_date || Date.now()).getTime() - new Date(a.due_date || Date.now()).getTime())
-                .slice(0, 3)
-                .map((task) => (
-                  <div key={task.id} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white hover:bg-gray-50 border border-gray-100 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow group">
-                    <div className={`w-3 h-3 rounded-full ${task.completed ? 'bg-emerald-500' : task.priority === 3 ? 'bg-red-500' : task.priority === 2 ? 'bg-yellow-500' : 'bg-indigo-400'}`} />
-                    <div className="flex-grow">
-                      <p className="text-sm font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">
-                        {task.title}
-                      </p>
-                      <p className={`text-xs ${task.completed 
-                        ? 'text-emerald-500' 
-                        : task.priority === 3 
-                          ? 'text-red-500' 
-                          : task.priority === 2 
-                            ? 'text-yellow-500' 
-                            : 'text-indigo-500'}`}
-                      >
-                        {task.completed ? 'Completed' 
-                          : `${task.priority === 1 ? 'Low' : task.priority === 2 ? 'Medium' : 'High'} Priority`
-                        }
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.25">
-                        {task.due_date ? moment(task.due_date).fromNow() : 'No due date'}
-                      </p>
-                    </div>
+          <div className="card p-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden relative group bg-white dark:bg-gray-800/80 dark:border dark:border-gray-700/70">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true"></div>
+            <div className="absolute top-0 left-0 w-24 h-24 bg-emerald-500/5 dark:bg-emerald-400/10 rounded-full -ml-12 -mt-12 blur-2xl" aria-hidden="true" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-emerald-500/5 dark:bg-emerald-400/10 rounded-full -mr-5 -mb-5 blur-2xl" aria-hidden="true" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 dark:bg-emerald-400/20 rounded-full -mr-8 -mt-8 group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-400/30 transition-all duration-300"></div>
+            
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold mb-6 flex items-center text-emerald-700 dark:text-emerald-400">
+                <FiClock className="w-6 h-6 mr-3" />
+                Recent Tasks
+                <span className="ml-auto text-xs font-normal bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full">
+                  {tasks.length} total
+                </span>
+              </h3>
+              
+              <div className="space-y-3">
+                {tasks.length > 0 ? (
+                  tasks
+                    .sort((a, b) => new Date(a.due_date || Date.now()).getTime() - new Date(b.due_date || Date.now()).getTime())
+                    .slice(0, 3)
+                    .map((task) => {
+                      const priorityColors = {
+                        high: 'bg-red-500 dark:bg-red-400',
+                        medium: 'bg-yellow-500 dark:bg-yellow-400',
+                        low: 'bg-indigo-400 dark:bg-indigo-300',
+                        completed: 'bg-emerald-500 dark:bg-emerald-400'
+                      };
+                      
+                      const priorityText = task.completed ? 'completed' : 
+                                         task.priority === 3 ? 'high' : 
+                                         task.priority === 2 ? 'medium' : 'low';
+                      
+                      return (
+                        <div 
+                          key={task.id} 
+                          onClick={() => router.push(`/tasks/${task.id}`)}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600/90 border border-gray-100 dark:border-gray-600 hover:border-emerald-100 dark:hover:border-emerald-500/30 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer group"
+                        >
+                          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${priorityColors[priorityText]}`} />
+                          <div className="flex-grow min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-gray-900 dark:group-hover:text-white transition-colors truncate">
+                              {task.title}
+                            </p>
+                            <div className="flex items-center mt-1 space-x-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                task.completed 
+                                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' 
+                                  : task.priority === 3 
+                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                                    : task.priority === 2 
+                                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                                      : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                              }`}>
+                                {task.completed ? 'Completed' : 
+                                 `${task.priority === 1 ? 'Low' : task.priority === 2 ? 'Medium' : 'High'} Priority`}
+                              </span>
+                              {task.due_date && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {moment(task.due_date).fromNow()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="text-center py-6">
+                    <FiClipboard className="w-8 h-8 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No tasks yet. Add one to get started!</p>
                   </div>
-                ))}
-              <button 
-                onClick={() => router.push('/tasks')} 
-                className="w-full text-center text-sm font-medium text-gray-700 hover:text-gray-900 py-1.5 transition-colors rounded-lg hover:bg-gray-100"
-              >
-                View all tasks →
-              </button>
+                )}
+                
+                <button 
+                  onClick={() => router.push('/tasks')} 
+                  className="w-full text-center text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 py-2 transition-colors rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 mt-2 flex items-center justify-center space-x-1 group"
+                >
+                  <span>View all tasks</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Upcoming Events Widget */}
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="card p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-blue-100 overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-full -mr-8 -mt-8 group-hover:bg-blue-500/20 transition-all duration-300"></div>
+          <div className="card p-5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden relative group bg-white dark:bg-gray-800/80 dark:border dark:border-gray-700/70">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 dark:from-blue-500/10 dark:to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true"></div>
+            <div className="absolute top-0 left-0 w-24 h-24 bg-blue-500/5 dark:bg-blue-400/10 rounded-full -ml-12 -mt-12 blur-2xl" aria-hidden="true" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-indigo-500/5 dark:bg-indigo-400/10 rounded-full -mr-5 -mb-5 blur-2xl" aria-hidden="true" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 dark:bg-blue-400/20 rounded-full -mr-8 -mt-8 group-hover:bg-blue-500/20 dark:group-hover:bg-blue-400/30 transition-all duration-300"></div>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-bold text-blue-700 flex items-center">
+              <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400 flex items-center">
                 <FiCalendar className="w-5 h-5 mr-2" />
                 Upcoming Events
               </h3>
               <button 
                 onClick={() => router.push('/calendar')} 
-                className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center space-x-1 group"
               >
-                View All
-                <svg className="w-3 h-3 ml-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-                </svg>
+                <span>View all events</span>
+                <span className="group-hover:translate-x-0.5 transition-transform">→</span>
               </button>
             </div>
             
@@ -393,9 +451,9 @@ export default function DashboardPage() {
               {isLoading ? (
                 <div className="text-center py-3">
                   <div className="spinner"></div>
-                  <p className="text-gray-500 mt-2 text-xs">Loading events...</p>
+                  <p className="text-gray-500 dark:text-gray-400 mt-2 text-xs">Loading events...</p>
                 </div>
-              ) : events && events.length > 0 ? (
+              ) : events && events.filter(event => moment(event.start).isSameOrAfter(moment().startOf('day'))).length > 0 ? (
                 [...events]
                   // Filter only upcoming events (today and future)
                   .filter(event => moment(event.start).isSameOrAfter(moment().startOf('day')))
@@ -403,7 +461,7 @@ export default function DashboardPage() {
                   .sort((a, b) => a.start.getTime() - b.start.getTime())
                   .slice(0, 3) // Only show the 3 closest upcoming events
                   .map((event) => (
-                    <div key={event.id} className="flex gap-3 p-2 rounded-lg bg-white hover:bg-blue-50 shadow-sm hover:shadow transition-all duration-300 border border-blue-100 hover:border-blue-200 transform hover:-translate-y-0.5 border-l-3 border-l-blue-500 group">
+                    <div key={event.id} className="flex gap-3 p-2 rounded-lg bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600/80 shadow-sm hover:shadow transition-all duration-300 border border-blue-100 dark:border-gray-600 hover:border-blue-200 dark:hover:border-gray-500 transform hover:-translate-y-0.5 border-l-3 border-l-blue-500 group">
                       {/* Date column */}
                       <div className="flex flex-col items-center justify-center min-w-[50px] text-center">
                         <div 
@@ -416,20 +474,20 @@ export default function DashboardPage() {
                             {moment(event.start).format('MMM')}
                           </span>
                         </div>
-                        <span className="text-[10px] mt-0.5 text-gray-500 font-medium">
+                        <span className="text-[10px] mt-0.5 text-gray-500 dark:text-gray-400 font-medium">
                           {moment(event.start).format('ddd')}
                         </span>
                       </div>
                       
                       {/* Event details */}
                       <div className="flex-1">
-                        <h4 className="font-semibold text-blue-700 text-sm mb-0.5 line-clamp-1 group-hover:text-blue-800 transition-colors">
+                        <h4 className="font-semibold text-blue-700 dark:text-blue-300 text-sm mb-0.5 line-clamp-1 group-hover:text-blue-800 dark:group-hover:text-blue-200 transition-colors">
                           {event.title}
                         </h4>
-                        <p className="text-xs text-gray-600 line-clamp-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-1">
                           {event.description || 'No description provided'}
                         </p>
-                        <div className="flex items-center mt-1 text-[10px] text-gray-500">
+                        <div className="flex items-center mt-1 text-[10px] text-gray-500 dark:text-gray-400">
                           <FiClock className="w-3 h-3 mr-1 text-blue-500" />
                           <span>{moment(event.start).format('h:mm A')} - {moment(event.end).format('h:mm A')}</span>
                         </div>
@@ -437,36 +495,40 @@ export default function DashboardPage() {
                     </div>
                   ))
               ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-600 text-sm mb-2">No upcoming events</p>
+                <div className="flex flex-col items-center justify-center py-4">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">No upcoming events</p>
                   <button 
-                    onClick={() => router.push('/calendar')} 
-                    className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    onClick={() => router.push('/calendar?newEvent=true')} 
+                    className="flex items-center justify-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors group"
                   >
-                    Add Event
+                    <FiPlus className="w-3 h-3" />
+                    <span>Add Event</span>
                   </button>
                 </div>
               )}
             </div>
           </div>
-          <div className="card p-4 bg-gradient-to-br from-amber-50 to-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-amber-100 overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-full -mr-8 -mt-8 group-hover:bg-amber-500/20 transition-all duration-300"></div>
-            <h3 className="text-lg font-bold mb-3 flex items-center text-amber-700">
+          <div className="card p-5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden relative group bg-white dark:bg-gray-800/80 dark:border dark:border-gray-700/70">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true"></div>
+            <div className="absolute top-0 left-0 w-24 h-24 bg-amber-500/5 dark:bg-amber-400/10 rounded-full -ml-12 -mt-12 blur-2xl" aria-hidden="true" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-orange-500/5 dark:bg-orange-400/10 rounded-full -mr-5 -mb-5 blur-2xl" aria-hidden="true" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 dark:bg-amber-400/20 rounded-full -mr-8 -mt-8 group-hover:bg-amber-500/20 dark:group-hover:bg-amber-400/30 transition-all duration-300"></div>
+            <h3 className="text-lg font-bold mb-3 flex items-center text-amber-700 dark:text-amber-400">
               <FiBookOpen className="w-5 h-5 mr-2" />
               Study Stats
             </h3>
-            <div className="flex flex-col items-center justify-center h-44 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-dashed border-amber-200 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-grid-amber-500/[0.05] bg-[size:16px_16px]" aria-hidden="true"></div>
+            <div className="flex flex-col items-center justify-center h-44 bg-gradient-to-br from-amber-50 to-white dark:from-gray-800/50 dark:to-gray-900/80 rounded-xl border border-dashed border-amber-200 dark:border-gray-600 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-grid-amber-500/[0.05] dark:bg-grid-amber-400/[0.05] bg-[size:16px_16px]" aria-hidden="true"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-amber-500/10 rounded-full group-hover:bg-amber-500/20 transition-all duration-500"></div>
               <div className="absolute -top-6 -left-6 w-32 h-32 bg-amber-500/10 rounded-full group-hover:bg-amber-500/20 transition-all duration-500"></div>
               
-              <svg className="w-10 h-10 text-amber-400 mb-3 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="w-10 h-10 text-amber-400 dark:text-amber-500 mb-3 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-amber-600 font-medium text-sm">Study statistics coming soon</p>
-              <p className="text-xs text-gray-500 mt-1">Track your progress and study habits</p>
+              <p className="text-amber-600 dark:text-amber-400 font-medium text-sm">Study statistics coming soon</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Track your progress and study habits</p>
               
-              <button className="mt-4 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-md transition-all duration-300 flex items-center">
+              <button className="mt-4 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-800/50 rounded-md transition-all duration-300 flex items-center">
                 <FiPlus className="w-3.5 h-3.5 mr-1" />
                 Add Study Session
               </button>
