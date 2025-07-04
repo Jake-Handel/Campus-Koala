@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChatBubbleLeftIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -22,6 +23,8 @@ interface AIConversation {
 }
 
 export default function AIAssistant() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -488,9 +491,14 @@ export default function AIAssistant() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all"
+        className={`p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+          isDark
+            ? 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500'
+            : 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500'
+        }`}
+        aria-label="Open AI Assistant"
       >
-        <ChatBubbleLeftIcon className="w-6 h-6" />
+        <ChatBubbleLeftIcon className="h-6 w-6" />
       </motion.button>
 
       {isOpen && (
@@ -498,98 +506,102 @@ export default function AIAssistant() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-20 right-4 bg-white rounded-lg shadow-xl border border-gray-100 flex flex-col min-w-[400px] max-w-[60vw]"
-          style={{ 
-            width: width, 
-            height: height,
-            maxHeight: '80vh',
-            cursor: 'default'
-          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          className={`flex flex-col rounded-lg shadow-xl overflow-hidden ${
+            isDark ? 'bg-gray-800' : 'bg-white'
+          }`}
+          style={{ width: `${width}px`, height: `${height}px` }}
           ref={containerRef}
         >
-          <div className="flex justify-between items-center p-4 border-b border-gray-100">
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
-              <div
-                ref={resizeRef}
-                onMouseDown={handleResizeStart}
-                className="size-6 flex items-center justify-center bg-gray-100 rounded cursor-ns-resize hover:bg-gray-200 transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="size-4 text-gray-500"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"
-                  />
-                </svg>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setActiveTab('chat');
-                    if (!selectedConversation) {
-                      setMessages([]);
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg ${activeTab === 'chat' ? 'bg-indigo-100 text-indigo-800' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Chat
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('history');
+              <button
+                onClick={() => {
+                  setActiveTab('chat');
+                  if (!selectedConversation) {
                     setMessages([]);
-                    setSelectedConversation(null);
-                  }}
-                  className={`px-3 py-1.5 rounded-lg ${activeTab === 'history' ? 'bg-indigo-100 text-indigo-800' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  History
-                </button>
-              </div>
+                  }
+                }}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
+                  activeTab === 'chat'
+                    ? isDark
+                      ? 'text-indigo-400 border-b-2 border-indigo-400'
+                      : 'text-indigo-600 border-b-2 border-indigo-600'
+                    : isDark
+                    ? 'text-gray-400 hover:text-gray-300'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Chat
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
+                  activeTab === 'history'
+                    ? isDark
+                      ? 'text-indigo-400 border-b-2 border-indigo-400'
+                      : 'text-indigo-600 border-b-2 border-indigo-600'
+                    : isDark
+                    ? 'text-gray-400 hover:text-gray-300'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                History
+              </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold whitespace-nowrap">AI Assistant</span>
+              <span className={`text-lg font-semibold whitespace-nowrap ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
+                AI Assistant
+              </span>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-500 hover:text-gray-700 p-1"
+                className={`p-1 ${
+                  isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className={`flex-1 overflow-y-auto p-4 ${
+            isDark ? 'bg-gray-800' : 'bg-white'
+          }`}>
             {activeTab === 'chat' ? (
               <div className="space-y-4">
                 {selectedConversation && (
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold text-gray-800">{selectedConversation.title}</h2>
+                    <h2 className={`text-lg font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {selectedConversation.title}
+                    </h2>
                   </div>
                 )}
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`inline-block p-3 rounded-lg ${
+                      className={`max-w-[80%] p-3 rounded-lg ${
                         message.role === 'user'
-                          ? 'bg-indigo-100 text-indigo-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? isDark
+                            ? 'bg-indigo-700 text-white rounded-br-none'
+                            : 'bg-indigo-100 text-indigo-900 rounded-br-none'
+                          : isDark
+                          ? 'bg-gray-700 text-white rounded-bl-none'
+                          : 'bg-gray-100 text-gray-900 rounded-bl-none'
                       }`}
-                      style={{
-                        maxWidth: '80%', // Limit message width to 80% of container
-                        wordBreak: 'break-word'
-                      }}
                     >
-                      <p>{message.content}</p>
-                      <p className="text-xs text-gray-500 mt-1">{message.timestamp}</p>
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                      <div className={`text-xs mt-1 ${
+                        isDark ? 'text-gray-300' : 'text-gray-500 opacity-50'
+                      }`}>
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -598,17 +610,27 @@ export default function AIAssistant() {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">Chat History</h2>
-                  <p className="text-sm text-gray-500 mt-1">Click to view or rename conversations</p>
+                  <h2 className={`text-lg font-semibold ${
+                    isDark ? 'text-gray-200' : 'text-gray-800'
+                  }`}>
+                    Chat History
+                  </h2>
+                  <p className={`text-sm mt-1 ${
+                    isDark ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Click to view or rename conversations
+                  </p>
                 </div>
-                
                 <div className="space-y-2">
                   {history?.map((conversation: AIConversation) => (
                     <div
                       key={conversation.id}
-                      className="p-4 border-b hover:bg-gray-50 cursor-pointer"
+                      className={`p-4 border-b cursor-pointer transition-colors ${
+                        isDark
+                          ? 'border-gray-700 hover:bg-gray-700/50'
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
                       onClick={(e) => {
-                        // Only handle click if not clicking a button
                         if (!(e.target as HTMLElement).closest('button')) {
                           loadConversation(conversation.id);
                         }
@@ -620,7 +642,11 @@ export default function AIAssistant() {
                             type="text"
                             value={newTitle}
                             onChange={(e) => setNewTitle(e.target.value)}
-                            className="flex-1 p-2 border rounded-md bg-white"
+                            className={`flex-1 p-2 rounded-md ${
+                              isDark
+                                ? 'bg-gray-700 border-gray-600 text-white'
+                                : 'bg-white border border-gray-300'
+                            }`}
                             autoFocus
                           />
                           <button
@@ -628,7 +654,9 @@ export default function AIAssistant() {
                               e.stopPropagation();
                               handleTitleSave(conversation);
                             }}
-                            className="text-green-500 hover:text-green-700"
+                            className={`${
+                              isDark ? 'text-green-400 hover:text-green-300' : 'text-green-500 hover:text-green-700'
+                            }`}
                           >
                             <span className="sr-only">Save title</span>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -649,11 +677,22 @@ export default function AIAssistant() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex justify-between items-center">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-gray-800 flex-1" onClick={() => loadConversation(conversation.id)}>
-                              {conversation.title}
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                              isDark ? 'bg-indigo-900/50' : 'bg-indigo-100'
+                            }`}>
+                              <ChatBubbleLeftIcon className={`h-4 w-4 ${
+                                isDark ? 'text-indigo-400' : 'text-indigo-600'
+                              }`} />
+                            </div>
+                            <h3 className={`text-sm font-medium ${
+                              isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {conversation.title || 'New Chat'}
                             </h3>
+                          </div>
+                          <div className="flex gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -661,16 +700,11 @@ export default function AIAssistant() {
                               }}
                               className="text-gray-500 hover:text-gray-700"
                             >
-                              <span className="sr-only">Rename conversation</span>
+                              <span className="sr-only">Edit title</span>
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
                             </button>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm text-gray-500">
-                              {new Date(conversation.created_at).toLocaleDateString()} at {new Date(conversation.created_at).toLocaleTimeString()}
-                            </p>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -678,6 +712,7 @@ export default function AIAssistant() {
                               }}
                               className="text-red-500 hover:text-red-700"
                             >
+                              <span className="sr-only">Delete conversation</span>
                               <TrashIcon className="w-4 h-4" />
                             </button>
                           </div>
@@ -691,29 +726,41 @@ export default function AIAssistant() {
           </div>
 
           {activeTab === 'chat' && (
-            <div className="border-t border-gray-100 p-4">
+            <div className={`border-t p-4 ${
+              isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'
+            }`}>
               <div className="flex gap-2">
                 <button
                   onClick={handleNewConversation}
-                  className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    isDark
+                      ? 'bg-indigo-700 text-white hover:bg-indigo-600'
+                      : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                  }`}
                 >
                   New Conversation
                 </button>
                 <button
                   onClick={() => setShowHelp(!showHelp)}
-                  className="flex-1 bg-gray-100 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    isDark
+                      ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
-                  {showHelp ? 'Hide' : 'Show'} Help
+                  {showHelp ? 'Hide Help' : 'Show Help'}
                 </button>
               </div>
               {showHelp && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className={`mt-4 p-4 rounded-lg ${
+                  isDark ? 'bg-gray-700/50 text-gray-200' : 'bg-gray-50 text-gray-800'
+                }`}>
                   <h3 className="text-lg font-semibold mb-2">AI Assistant Help</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm">
                     The AI assistant maintains context across conversations. Each conversation is separate and maintains its own history.
                     You can:
                   </p>
-                  <ul className="list-disc list-inside mt-2 text-sm text-gray-600">
+                  <ul className="list-disc list-inside mt-2 text-sm space-y-1">
                     <li>Create new conversations for different topics</li>
                     <li>View conversation history and summaries</li>
                     <li>Rename conversations</li>
@@ -723,7 +770,9 @@ export default function AIAssistant() {
               )}
               <div className="mt-4">
                 {error && (
-                  <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4">
+                  <div className={`p-3 rounded-lg mb-4 ${
+                    isDark ? 'bg-red-900/30 text-red-200' : 'bg-red-50 text-red-700'
+                  }`}>
                     {error}
                   </div>
                 )}
@@ -732,22 +781,26 @@ export default function AIAssistant() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && input.trim()) {
-                        sendMessage(input.trim());
-                      }
-                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && input.trim() && sendMessage(input)}
                     placeholder="Type your message..."
-                    className="flex-1 p-3 border bg-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`flex-1 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      isDark
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                        : 'border border-gray-300 bg-white text-gray-900'
+                    }`}
                     disabled={loading}
                   />
                   <button
-                    onClick={() => sendMessage(input.trim())}
-                    disabled={loading || !input.trim()}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      loading || !input.trim()
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    onClick={() => input.trim() && sendMessage(input)}
+                    disabled={!input.trim() || loading}
+                    className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                      !input.trim() || loading
+                        ? isDark
+                          ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : isDark
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500'
                     }`}
                   >
                     {loading ? 'Sending...' : 'Send'}

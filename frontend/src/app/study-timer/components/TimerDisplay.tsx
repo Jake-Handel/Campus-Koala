@@ -62,7 +62,7 @@ export default function TimerDisplay({
               cy="50" 
               r="48" 
               fill="none" 
-              stroke="#f0f4ff" 
+              className="stroke-gray-200 dark:stroke-gray-700"
               strokeWidth="4"
             />
             <motion.circle 
@@ -70,7 +70,7 @@ export default function TimerDisplay({
               cy="50" 
               r="48" 
               fill="none" 
-              stroke={currentSession?.type === 'break' ? '#10b981' : '#4f46e5'} 
+              className={currentSession?.type === 'break' ? 'stroke-emerald-500' : 'stroke-indigo-600 dark:stroke-indigo-500'}
               strokeWidth="4"
               strokeLinecap="round"
               initial={{ 
@@ -88,17 +88,21 @@ export default function TimerDisplay({
           
           <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
             <div className={`text-5xl md:text-6xl font-mono font-bold ${
-              currentSession?.type === 'break' ? 'text-emerald-600' : 'text-indigo-700'
+              currentSession?.type === 'break' 
+                ? 'text-emerald-600 dark:text-emerald-500' 
+                : 'text-indigo-700 dark:text-indigo-400'
             }`}>
               {formatTime(timeRemaining)}
             </div>
             <div className={`mt-2 text-sm font-semibold ${
-              currentSession?.type === 'break' ? 'text-emerald-500' : 'text-indigo-500'
+              currentSession?.type === 'break' 
+                ? 'text-emerald-500 dark:text-emerald-400' 
+                : 'text-indigo-500 dark:text-indigo-400'
             }`}>
               {currentSession?.type === 'break' ? 'Break Time' : 'Focus Time'}
             </div>
             {currentSession?.subject && (
-              <div className="mt-2 text-sm text-gray-500 font-medium">
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
                 {currentSession.subject}
               </div>
             )}
@@ -109,7 +113,7 @@ export default function TimerDisplay({
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={onReset}
-            className="p-2.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors duration-200"
+            className="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
             title="Reset Timer"
             disabled={!currentSession}
           >
@@ -120,7 +124,7 @@ export default function TimerDisplay({
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onStart}
-              className="p-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-200 shadow-lg shadow-indigo-200"
+              className="p-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all duration-200 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30"
               title="Start"
             >
               <Play className="w-7 h-7" fill="currentColor" />
@@ -129,7 +133,7 @@ export default function TimerDisplay({
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onStartPause}
-              className="p-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-200 shadow-lg shadow-indigo-200"
+              className="p-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all duration-200 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30"
               title={isPaused ? 'Resume' : 'Pause'}
             >
               {isPaused ? (
@@ -142,7 +146,7 @@ export default function TimerDisplay({
           
           <button 
             onClick={onShowTimerOptions}
-            className="p-2.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors duration-200"
+            className="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
             title="Timer Options"
           >
             <Plus className="w-5 h-5" />

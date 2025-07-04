@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gamepad2, BookOpen, Coffee, X, ArrowLeft } from 'lucide-react';
 import { SnakeGame, Minesweeper, Tetris } from '@/components/games';
@@ -122,8 +122,8 @@ export default function BreakManager({
   // Simple fallback component if no game is available
   function TestGame() {
     return (
-      <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
-        <h2 className="text-xl font-bold">Game would render here</h2>
+      <div className="w-full h-64 bg-gray-100 dark:bg-gray-700 flex items-center justify-center rounded-lg">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Game would render here</h2>
       </div>
     );
   }
@@ -136,23 +136,23 @@ export default function BreakManager({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/15 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/15 dark:bg-black/30 flex items-center justify-center z-50 p-4"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-2xl p-8 w-full max-w-4xl relative"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-4xl relative transition-colors duration-200"
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <X className="w-6 h-6" />
             </button>
             
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">Break Time! 🎉</h2>
-            <p className="text-xl text-center text-gray-600 mb-10">
+            <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">Break Time! 🎉</h2>
+            <p className="text-xl text-center text-gray-600 dark:text-gray-300 mb-10">
               How would you like to spend your {breakDuration}-minute break?
             </p>
 
@@ -195,13 +195,13 @@ export default function BreakManager({
       
       {/* Show the game in the main BreakManager modal if we have a game to show */}
       {completedSession?.metadata?.showGameSelection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="w-full max-w-md bg-white rounded-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/60">
+          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Select a Game</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Select a Game</h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -216,10 +216,10 @@ export default function BreakManager({
         </div>
       )}
       {completedSession?.metadata?.showGame && !showGameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="w-full max-w-4xl bg-white rounded-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/60">
+          <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {completedSession.subject}
               </h2>
               <button
@@ -243,7 +243,7 @@ export default function BreakManager({
                     onClose();
                   }
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 title="Back to game selection"
               >
                 <X className="w-6 h-6" />
@@ -259,9 +259,9 @@ export default function BreakManager({
                   case 'snake':
                     return (
                       <div className="w-full max-w-md mx-auto">
-                        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
-                          <p className="font-medium">Game Mode: Snake</p>
-                          <p className="text-xs text-yellow-700">Playing in break session</p>
+                        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-sm">
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Game Mode: Snake</p>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300">Playing in break session</p>
                         </div>
                         <SnakeGame onGameOver={(score: number) => {
                           console.log('Game over! Score:', score);
@@ -271,9 +271,9 @@ export default function BreakManager({
                   case 'minesweeper':
                     return (
                       <div className="w-full overflow-auto">
-                        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
-                          <p className="font-medium">Game Mode: Minesweeper</p>
-                          <p className="text-xs text-yellow-700">Playing in break session</p>
+                        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-sm">
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Game Mode: Minesweeper</p>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300">Playing in break session</p>
                         </div>
                         <div className="w-full flex justify-center">
                           <Minesweeper onGameOver={(score: number) => {
@@ -285,9 +285,9 @@ export default function BreakManager({
                   case 'tetris':
                     return (
                       <div className="w-full overflow-auto">
-                        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
-                          <p className="font-medium">Game Mode: Tetris</p>
-                          <p className="text-xs text-yellow-700">Playing in break session</p>
+                        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-sm">
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Game Mode: Tetris</p>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300">Playing in break session</p>
                         </div>
                         <div className="w-full flex justify-center">
                           <Tetris onGameEnd={(score: number) => {
@@ -309,7 +309,7 @@ export default function BreakManager({
               <div className="mt-4 text-center">
                 <button
                   onClick={onClose}
-                  className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
+                  className="inline-flex items-center text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" /> Back to study
                 </button>
@@ -330,43 +330,43 @@ interface BreakOptionProps {
   onClick: () => void;
 }
 
-const colorMap = {
+type ColorType = 'indigo' | 'blue' | 'amber';
+
+const colorMap: Record<ColorType, { bg: string; hoverBg: string; text: string }> = {
   indigo: {
-    bg: 'bg-indigo-50',
-    hoverBg: 'bg-indigo-100',
-    iconBg: 'bg-indigo-100',
-    hoverIconBg: 'bg-indigo-200',
-    text: 'text-indigo-600',
+    bg: 'bg-indigo-50 dark:bg-indigo-900/30',
+    hoverBg: 'bg-indigo-100 dark:bg-indigo-900/50',
+    text: 'text-indigo-700 dark:text-indigo-300',
   },
   blue: {
-    bg: 'bg-blue-50',
-    hoverBg: 'bg-blue-100',
-    iconBg: 'bg-blue-100',
-    hoverIconBg: 'bg-blue-200',
-    text: 'text-blue-600',
+    bg: 'bg-blue-50 dark:bg-blue-900/30',
+    hoverBg: 'bg-blue-100 dark:bg-blue-900/50',
+    text: 'text-blue-700 dark:text-blue-300',
   },
   amber: {
-    bg: 'bg-amber-50',
-    hoverBg: 'bg-amber-100',
-    iconBg: 'bg-amber-100',
-    hoverIconBg: 'bg-amber-200',
-    text: 'text-amber-600',
+    bg: 'bg-amber-50 dark:bg-amber-900/30',
+    hoverBg: 'bg-amber-100 dark:bg-amber-900/50',
+    text: 'text-amber-700 dark:text-amber-300',
   },
 };
 
 function BreakOption({ icon, title, description, color, onClick }: BreakOptionProps) {
-  const colors = colorMap[color];
+  const colors = colorMap[color as ColorType];
   
   return (
-    <button
+    <div
       onClick={onClick}
-      className={`group flex flex-col items-center p-6 rounded-xl ${colors.bg} hover:${colors.hoverBg} transition-colors duration-200 h-full`}
+      className={`flex flex-col items-center justify-center p-6 rounded-xl cursor-pointer transition-all duration-200 ${colors.bg} hover:${colors.hoverBg} dark:hover:bg-opacity-50`}
     >
-      <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${colors.iconBg} group-hover:${colors.hoverIconBg} transition-colors`}>
-        <span className={colors.text}>{icon}</span>
+      <div className={`p-3 rounded-full ${colors.bg} dark:bg-opacity-20 mb-4`}>
+        {React.cloneElement(icon as React.ReactElement, {
+          className: `${colors.text}`
+        })}
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-1">{title}</h3>
-      <p className="text-gray-600 text-sm text-center">{description}</p>
-    </button>
+      <h3 className={`text-lg font-semibold ${colors.text} mb-1`}>
+        {title}
+      </h3>
+      <p className="text-sm text-gray-500 dark:text-gray-300 text-center">{description}</p>
+    </div>
   );
 }

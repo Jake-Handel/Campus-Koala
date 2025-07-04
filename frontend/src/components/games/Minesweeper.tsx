@@ -307,10 +307,10 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
     const iconSize = getIconSize();
     
     let cellContent = null;
-    let cellClass = `${cellSize} flex items-center justify-center font-bold border border-gray-300 `;
+    let cellClass = `${cellSize} flex items-center justify-center font-bold border border-gray-300 dark:border-gray-600 `;
     
     if (cell.isRevealed) {
-      cellClass += 'bg-gray-200 ';
+      cellClass += 'bg-gray-200 dark:bg-gray-700 ';
       if (cell.isMine) {
         cellContent = <Bomb className={`${iconSize} text-red-600`} />;
       } else if (cell.neighborMines > 0) {
@@ -326,7 +326,7 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
         );
       }
     } else {
-      cellClass += 'bg-white hover:bg-gray-100 cursor-pointer ';
+      cellClass += 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer ';
       if (cell.isFlagged) {
         cellContent = <Flag className={`${iconSize} text-red-500`} />;
       }
@@ -357,7 +357,7 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
           className={`px-3 py-1 text-sm rounded-md transition-colors ${
             difficulty === diff
               ? 'bg-amber-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
           }`}
         >
           {diff.charAt(0).toUpperCase() + diff.slice(1)}
@@ -369,22 +369,22 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
   // Render game info
   const renderGameInfo = () => (
     <div className="flex justify-between items-center mb-4">
-      <div className="flex items-center bg-gray-100 px-3 py-1 rounded-md">
+      <div className="flex items-center bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md">
         <Flag className="w-4 h-4 text-red-500 mr-1" />
-        <span className="font-mono">{Math.max(0, minesLeft).toString().padStart(2, '0')}</span>
+        <span className="font-mono text-gray-800 dark:text-gray-200">{Math.max(0, minesLeft).toString().padStart(2, '0')}</span>
       </div>
       
       <button
         onClick={() => initGame()}
-        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
         aria-label="New Game"
       >
-        <RotateCcw className="w-5 h-5 text-gray-700" />
+        <RotateCcw className="w-5 h-5 text-gray-700 dark:text-gray-200" />
       </button>
       
-      <div className="flex items-center bg-gray-100 px-3 py-1 rounded-md">
-        <Clock className="w-4 h-4 text-gray-700 mr-1" />
-        <span className="font-mono">{time.toString().padStart(3, '0')}</span>
+      <div className="flex items-center bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md">
+        <Clock className="w-4 h-4 text-gray-700 dark:text-gray-200 mr-1" />
+        <span className="font-mono text-gray-800 dark:text-gray-200">{time.toString().padStart(3, '0')}</span>
       </div>
     </div>
   );
@@ -401,7 +401,7 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
     return (
       <div className={`w-full ${maxWidth} mx-auto`}>
         <div 
-          className="grid gap-px bg-gray-300 p-1 rounded-md overflow-hidden w-full"
+          className="grid gap-px bg-gray-300 dark:bg-gray-600 p-1 rounded-md overflow-hidden w-full"
           style={{
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
           }}
@@ -416,12 +416,12 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
   
   // Render game over/win screen
   const renderGameOver = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-md">
-      <div className="bg-white p-6 rounded-lg text-center max-w-xs">
-        <h3 className="text-xl font-bold mb-2">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 dark:bg-black/70 backdrop-blur-sm rounded-md">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg text-center max-w-xs border border-gray-200 dark:border-gray-700">
+        <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">
           {gameStatus === 'won' ? 'You Won! 🎉' : 'Game Over! 💣'}
         </h3>
-        <p className="text-gray-600 mb-4">
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
           {gameStatus === 'won'
             ? `Time: ${time}s`
             : 'You hit a mine!'
@@ -441,13 +441,13 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
   
   // Render welcome screen
   const renderWelcomeScreen = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-md">
+    <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-gray-800/95 rounded-md">
       <div className="text-center p-6 max-w-xs">
-        <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <AlertOctagon className="w-8 h-8 text-amber-500" />
+        <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertOctagon className="w-8 h-8 text-amber-500 dark:text-amber-400" />
         </div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">Minesweeper</h3>
-        <p className="text-gray-600 mb-6">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Minesweeper</h3>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           Left-click to reveal a cell, right-click to place a flag. Avoid the mines!
         </p>
         <div className="mb-6">
@@ -465,24 +465,24 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
   );
   
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 max-w-full overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 max-w-full overflow-hidden transition-colors duration-200">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Minesweeper</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Minesweeper</h2>
         <div className="flex space-x-2">
           <button
             onClick={() => setIsPaused(!isPaused)}
             disabled={!gameStarted || gameStatus !== 'playing'}
             className={`px-3 py-1 text-sm rounded-md ${
               !gameStarted || gameStatus !== 'playing'
-                ? 'bg-gray-200 text-gray-400'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
             }`}
           >
             {isPaused ? 'Resume' : 'Pause'}
           </button>
           <button
             onClick={initGame}
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md flex items-center"
+            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md flex items-center transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5 mr-1" />
             New
@@ -493,21 +493,21 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
       {renderDifficultySelector()}
       {renderGameInfo()}
       
-      <div className="relative bg-gray-200 p-1.5 rounded-md overflow-auto max-h-[70vh]">
+      <div className="relative bg-gray-200 dark:bg-gray-700 p-1.5 rounded-md overflow-auto max-h-[70vh] transition-colors">
         {renderBoard()}
         
         {!gameStarted && renderWelcomeScreen()}
         {gameStatus !== 'playing' && gameStarted && renderGameOver()}
         {isPaused && gameStarted && gameStatus === 'playing' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-md">
-            <div className="bg-white/90 px-6 py-3 rounded-lg font-medium text-gray-700">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 dark:bg-black/50 backdrop-blur-sm rounded-md">
+            <div className="bg-white/90 dark:bg-gray-800/90 px-6 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700">
               Paused
             </div>
           </div>
         )}
       </div>
       
-      <div className="mt-4 text-xs text-gray-500 text-center">
+      <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
         <p>Left-click to reveal, Right-click to flag</p>
       </div>
     </div>
