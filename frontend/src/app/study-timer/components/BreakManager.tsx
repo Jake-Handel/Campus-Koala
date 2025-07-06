@@ -30,7 +30,6 @@ export default function BreakManager({
   useEffect(() => {
     // If this is a break session and it's marked as complete, close the modal
     if (completedSession?.type === 'break' && isBreakComplete) {
-      console.log('Break completed, closing BreakManager');
       onClose();
       return;
     }
@@ -38,14 +37,12 @@ export default function BreakManager({
     // Only show break options if this is after a study session
     // and not after a break
     if (completedSession?.type === 'study') {
-      console.log('Showing break options after study session');
       setShowBreakOptions(true);
     }
   }, [completedSession, isBreakComplete, onClose]);
   
   // Don't render if this is a completed break session
   if (completedSession?.type === 'break' && completedSession.completed) {
-    console.log('Not rendering BreakManager for completed break session');
     return null;
   }
 
@@ -73,7 +70,6 @@ export default function BreakManager({
   };
   
   const handleGameSelect = (game: 'snake' | 'minesweeper' | 'tetris') => {
-    console.log('Game selected:', game);
     // Close the game selection modal
     setShowGameModal(false);
     
@@ -97,7 +93,6 @@ export default function BreakManager({
       }
     };
     
-    console.log('Creating break session with game:', breakSession);
     onStartBreak(breakSession);
   };
   
@@ -186,7 +181,6 @@ export default function BreakManager({
       <GameModal 
         isOpen={showGameModal} 
         onClose={() => {
-          console.log('GameModal onClose called');
           setShowGameModal(false);
         }}
         onSelectGame={handleGameSelect}
@@ -252,9 +246,6 @@ export default function BreakManager({
             
             <div className="w-full">
               {(() => {
-                console.log('Rendering game type:', completedSession.metadata?.gameType);
-                console.log('Session metadata:', completedSession.metadata);
-                
                 switch(completedSession.metadata?.gameType) {
                   case 'snake':
                     return (
@@ -264,7 +255,6 @@ export default function BreakManager({
                           <p className="text-xs text-yellow-700 dark:text-yellow-300">Playing in break session</p>
                         </div>
                         <SnakeGame onGameOver={(score: number) => {
-                          console.log('Game over! Score:', score);
                         }} />
                       </div>
                     );
@@ -277,7 +267,6 @@ export default function BreakManager({
                         </div>
                         <div className="w-full flex justify-center">
                           <Minesweeper onGameOver={(score: number) => {
-                            console.log('Minesweeper game over! Score:', score);
                           }} />
                         </div>
                       </div>
@@ -291,13 +280,11 @@ export default function BreakManager({
                         </div>
                         <div className="w-full flex justify-center">
                           <Tetris onGameEnd={(score: number) => {
-                            console.log('Tetris game over! Score:', score);
                           }} />
                         </div>
                       </div>
                     );
                   default:
-                    console.warn('Unknown game type:', completedSession.metadata?.gameType);
                     return (
                       <div className="w-full max-w-md mx-auto">
                         <TestGame />

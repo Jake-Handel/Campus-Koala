@@ -24,17 +24,11 @@ function Providers({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   
   useEffect(() => {
-    console.log('Providers: Component mounted');
     setMounted(true);
-    
-    // Log initial theme state
-    console.log('Providers: Initial theme from localStorage:', localStorage.getItem('theme'));
-    console.log('Providers: Initial theme from useTheme():', theme);
     
     // Listen for theme changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'theme') {
-        console.log('Providers: Theme changed in localStorage:', e.newValue);
       }
     };
     
@@ -45,13 +39,10 @@ function Providers({ children }: { children: React.ReactNode }) {
   // Log when theme changes
   useEffect(() => {
     if (mounted) {
-      console.log('Providers: Theme updated to:', theme);
-      console.log('Providers: Document classList:', document.documentElement.classList);
     }
   }, [theme, mounted]);
 
   if (!mounted) {
-    console.log('Providers: Not mounted yet, rendering fallback');
     return <div className={inter.className}>{children}</div>;
   }
 
@@ -59,8 +50,8 @@ function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider 
       attribute="class" 
       defaultTheme="system" 
-      enableSystem 
-      disableTransitionOnChange
+      enableSystem={true} 
+      disableTransitionOnChange={false}
       storageKey="study-app-theme"
     >
       {children}
@@ -90,14 +81,6 @@ function ThemeApplier() {
       
       // Also set the data-theme attribute on the body for compatibility
       document.body.setAttribute('data-theme', currentTheme);
-      
-      console.log('ThemeApplier: Applied theme', { 
-        theme, 
-        systemTheme,
-        currentTheme,
-        rootClass: root.className,
-        darkMode: currentTheme === 'dark'
-      });
     }
   }, [theme, systemTheme]);
   
