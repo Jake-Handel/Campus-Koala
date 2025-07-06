@@ -17,9 +17,7 @@ const SettingsButton = () => {
 
   // Toggle theme function
   const toggleTheme = () => {
-    console.log('Current theme before toggle:', theme);
     const newTheme = theme === 'dark' ? 'light' : 'dark';
-    console.log('Setting theme to:', newTheme);
     
     // Force update the theme
     setTheme(newTheme);
@@ -30,8 +28,6 @@ const SettingsButton = () => {
     // Force a re-render of the theme applier
     const event = new Event('theme-change');
     window.dispatchEvent(event);
-    
-    console.log('Dispatched theme change event');
   };
 
   // Close popup when clicking outside
@@ -53,16 +49,7 @@ const SettingsButton = () => {
     if (!mounted) return;
     
     const handleThemeChange = () => {
-      console.log('Theme changed to:', theme);
-      console.log('Document attributes:', {
-        class: document.documentElement.className,
-        'data-theme': document.documentElement.getAttribute('data-theme'),
-        'body-data-theme': document.body.getAttribute('data-theme')
-      });
     };
-    
-    // Initial log
-    handleThemeChange();
     
     // Listen for theme changes
     window.addEventListener('theme-change', handleThemeChange);
@@ -74,7 +61,6 @@ const SettingsButton = () => {
 
   // Don't render anything during SSR or before mount
   if (!mounted) {
-    console.log('Rendering null (not mounted yet)');
     return null;
   }
 

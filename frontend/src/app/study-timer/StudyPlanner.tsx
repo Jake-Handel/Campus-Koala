@@ -62,8 +62,7 @@ export default function StudyPlanner() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        const errorMsg = 'No authentication token found';
-        throw new Error(errorMsg);
+        throw new Error('No authentication token found');
       }
 
       const now = new Date();
@@ -80,12 +79,12 @@ export default function StudyPlanner() {
         updated_at: now
       };
 
-
       const response = await fetch('http://localhost:5000/api/study/sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(sessionToSave, (key, value) => 
@@ -93,13 +92,13 @@ export default function StudyPlanner() {
         )
       });
 
+      const responseText = await response.text();
       if (!response.ok) {
-        const errorText = await response.text();
-        const errorMsg = `Failed to save session: ${response.status} ${response.statusText} - ${errorText}`;
+        const errorMsg = `Failed to save session: ${response.status} ${response.statusText} - ${responseText}`;
         throw new Error(errorMsg);
       }
 
-      const responseData = await response.json();
+      const responseData = responseText ? JSON.parse(responseText) : {};
       
       return responseData;
     } catch (error) {
@@ -116,15 +115,19 @@ export default function StudyPlanner() {
     
     // Determine if this is a break session
     const isBreak = prev.type === 'break';
-    console.log('Session completing - isBreak:', isBreak, 'session:', prev);
+
+    // Calculate end time based on start time and duration
+    const startTime = prev.startTime ? new Date(prev.startTime) : new Date();
+    const durationInMs = (prev.duration || 0) * 60 * 1000; // Convert minutes to ms
+    const endTime = new Date(startTime.getTime() + durationInMs);
 
     // Update session state
     const completedSession = { 
       ...prev, 
       completed: true, 
       completed_at: new Date(),
-      end_time: new Date(),
-      startTime: prev.startTime || new Date(),
+      startTime: startTime,
+      end_time: endTime,
       duration: prev.duration || 0,
       break_duration: prev.break_duration || 0,
       subject: prev.subject || (isBreak ? 'Break' : 'Study Session'),
@@ -141,12 +144,10 @@ export default function StudyPlanner() {
 
     // Handle break session completion
     if (isBreak) {
-      console.log('Break session completed, showing continue options');
       setShowContinueStudying(true);
     } 
     // Handle study session completion
     else {
-      console.log('Study session completed, showing celebration');
       setShowCelebration(true);
     }
     
@@ -160,10 +161,8 @@ export default function StudyPlanner() {
     );
     
     try {
-      console.log('Saving session to backend...', completedSession);
       await saveSessionToBackend(completedSession);
     } catch (error) {
-      console.error('Failed to save session:', error);
     }
     
     setIsActive(false);
@@ -187,7 +186,6 @@ export default function StudyPlanner() {
     
     // Clear any existing timer
     if (timerRef.current) {
-      console.log('Clearing existing timer');
       clearInterval(timerRef.current);
       timerRef.current = undefined;
     }
@@ -213,7 +211,6 @@ export default function StudyPlanner() {
     // Update the time remaining if needed
     if (timeRemainingValue <= 0 || sessionType === 'break') {
       const newTimeRemaining = sessionType === 'break' ? effectiveDuration * 60 : remainingTime;
-      console.log('Setting initial time remaining to:', newTimeRemaining, 'seconds for', sessionType, 'session');
       setTimeRemaining(newTimeRemaining);
       
       // If we had to set the time remaining, we need to wait for the state update
@@ -236,8 +233,6 @@ export default function StudyPlanner() {
     // Store the start time for accurate elapsed time calculation
     const startTime = Date.now();
     const initialRemaining = timeRemaining > 0 ? timeRemaining : duration * 60;
-    
-    console.log('Starting timer with duration:', duration, 'minutes, type:', sessionType, 'initialRemaining:', initialRemaining);
     
     // Clear any existing timer (just to be safe)
     if (timerRef.current) {
@@ -368,6 +363,9 @@ export default function StudyPlanner() {
       ? Math.max(1, session.duration || 1)  // Ensure at least 1 minute for breaks
       : (session.duration > 0 ? session.duration : newStudySession.duration);
 
+    // Ensure we have a clean start time
+    const startTime = new Date();
+    
     // Create a new session object ensuring type is preserved
     const updatedSession: StudySession = {
       ...session,
@@ -375,13 +373,15 @@ export default function StudyPlanner() {
       duration,
       isCurrent: true,
       completed: false,
-      startTime: new Date(),
-      end_time: new Date(Date.now() + duration * 60 * 1000),
-      created_at: session.created_at || new Date(),
+      startTime: startTime, // Set the start time to now
+      end_time: new Date(startTime.getTime() + duration * 60 * 1000), // Calculate end time based on start time
+      created_at: session.created_at || startTime,
       subject: session.subject || (isBreak ? 'Break' : 'Study Session'),
       id: session.id || `session-${Date.now()}`,
       break_duration: session.break_duration || 0
     };
+    
+
 
     // Reset timer state
     setIsActive(true);
@@ -405,11 +405,6 @@ export default function StudyPlanner() {
   
   // Cache duration in milliseconds (5 minutes)
   const CACHE_DURATION = 5 * 60 * 1000;
-
-  // Log break flow state changes
-  useEffect(() => {
-    console.log('isInBreakFlow updated to:', isInBreakFlow);
-  }, [isInBreakFlow]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -467,9 +462,6 @@ export default function StudyPlanner() {
 
   // Handle break start
   const handleStartBreak = (breakSession: StudySession) => {
-    console.group('handleStartBreak');
-    console.log('Starting break with session:', breakSession);
-    
     // Close any open modals
     setShowCelebration(false);
     setShowContinueStudying(false);
@@ -478,8 +470,6 @@ export default function StudyPlanner() {
     // Calculate break duration as 1/3 of the study session duration
     const studyDuration = currentSession?.duration || newStudySession.duration;
     const breakDuration = breakSession.duration || Math.max(1, Math.floor(studyDuration / 3)); // Use provided duration or calculate
-    
-    console.log(`Starting break: ${breakDuration} minutes`);
     
     // Create a proper break session, preserving any metadata from the break session
     const breakSessionToStart: StudySession = {
@@ -497,8 +487,6 @@ export default function StudyPlanner() {
       notes: breakSession.notes || ''
     };
     
-    console.log('Break session to start:', breakSessionToStart);
-    
     // Update the current session with the new break session
     setCurrentSession(breakSessionToStart);
     
@@ -508,11 +496,9 @@ export default function StudyPlanner() {
     
     // If this is a game break, ensure the BreakManager stays open
     if (breakSession.metadata?.showGame) {
-      console.log('Game break detected, keeping BreakManager open');
       setShowBreakManager(true);
     }
     
-    console.groupEnd();
   };
 
   return (
@@ -572,7 +558,6 @@ export default function StudyPlanner() {
               key="celebration-modal"
               isOpen={showCelebration}
               onClose={() => {
-                console.log('Celebration modal closed, showing BreakManager');
                 setShowCelebration(false);
                 setTimeout(() => setShowBreakManager(true), 100);
                 
@@ -601,8 +586,6 @@ export default function StudyPlanner() {
               key={`break-manager-${currentSession.id}`}
               isBreakComplete={false}
               onStartBreak={(breakSession) => {
-                console.log('BreakManager onStartBreak called with:', breakSession);
-                // Update the current session with the new break session data
                 const updatedSession = {
                   ...currentSession,
                   ...breakSession,
@@ -616,7 +599,6 @@ export default function StudyPlanner() {
                 handleStartBreak(updatedSession);
               }}
               onClose={() => {
-                console.log('BreakManager onClose called');
                 // Only close the BreakManager if we're not in a game break
                 if (!currentSession?.metadata?.showGame) {
                   setShowBreakManager(false);

@@ -57,7 +57,6 @@ export default function AIAssistant() {
     if (token) {
       fetchChatHistory().catch(error => {
         setError('Failed to fetch chat history');
-        console.error('Error fetching chat history:', error);
       });
     }
   }, [token]);
@@ -167,7 +166,6 @@ export default function AIAssistant() {
       }
     } catch (error) {
       setError('Failed to fetch chat history');
-      console.error('Error fetching chat history:', error);
       setLoading(false);
     }
   };
@@ -216,7 +214,6 @@ export default function AIAssistant() {
       setContext(summary || '');
     } catch (error) {
       setError('Failed to load conversation');
-      console.error('Error loading conversation:', error);
       setLoading(false);
     }
   };
@@ -254,7 +251,6 @@ export default function AIAssistant() {
       setError(null);
     } catch (error) {
       setError('Failed to delete conversation');
-      console.error('Error deleting conversation:', error);
     }
   };
 
@@ -304,7 +300,6 @@ export default function AIAssistant() {
       setError(null);
     } catch (error) {
       setError('Failed to deactivate conversation');
-      console.error('Error deactivating conversation:', error);
     }
   };
 
@@ -354,7 +349,6 @@ export default function AIAssistant() {
       scrollToBottom();
     } catch (error) {
       setError('Failed to send message');
-      console.error('Error sending message:', error);
     }
   };
 
@@ -399,7 +393,6 @@ export default function AIAssistant() {
       setError(null);
     } catch (error) {
       setError('Failed to rename conversation');
-      console.error('Error renaming conversation:', error);
     }
   };
 
@@ -447,7 +440,6 @@ export default function AIAssistant() {
       setError(null);
     } catch (error) {
       setError('Failed to create new conversation');
-      console.error('Error creating new conversation:', error);
     }
   };
 
@@ -476,7 +468,6 @@ export default function AIAssistant() {
       setContext(data.context);
       return data.summary;
     } catch (error) {
-      console.error('Error fetching conversation context:', error);
       return null;
     }
   };

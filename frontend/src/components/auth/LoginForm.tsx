@@ -23,7 +23,6 @@ export default function LoginForm() {
         router.push('/dashboard');
       }
     } catch (error) {
-      console.error('Login error:', error);
     }
   };
 

@@ -85,10 +85,7 @@ export default function GameModal({ isOpen, onClose, onSelectGame, currentSessio
   ];
 
   const renderContent = () => {
-    console.log('GameModal renderContent called', { selectedGame, currentSession });
-    
     if (selectedGame) {
-      console.log('Selected game:', selectedGame);
       // Render the selected game
       if (selectedGame === 'snake') {
         return (
@@ -121,9 +118,7 @@ export default function GameModal({ isOpen, onClose, onSelectGame, currentSessio
     
     // If we're in a break session that should show a game
     if (currentSession?.metadata?.showGame) {
-      console.log('Current session with showGame:', currentSession.metadata);
       const gameType = currentSession.metadata.gameType;
-      console.log('Game type from metadata:', gameType);
       
       if (gameType === 'snake') {
         return (
