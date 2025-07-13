@@ -1,0 +1,33 @@
+BEGIN Login(username, password)
+    SET error to none
+    
+    IF username or password is empty THEN
+        SET error to "All fields must be filled"
+        DISPLAY error
+    END IF
+    
+    TRY
+        SEND POST request to '/api/login' with data username, and password
+        
+        SET user = username
+        
+        IF user not found THEN
+            DISPLAY error "Invalid username or password"
+        END IF
+        
+        SET hashedPassword to the SHA256 of password
+
+        IF user password_hash does not match hashedPassword THEN
+            DISPLAY error "Invalid password"
+        END IF
+        
+        SET access_token = JWT encode user.id and user.username
+        
+        SET localStorage.token = access_token
+        
+        Redirect to dashboard
+        
+    CATCH error THEN
+        DISPLAY error "Login failed. Please check your credentials."
+    END TRY
+END Login

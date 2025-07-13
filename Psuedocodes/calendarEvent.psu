@@ -1,0 +1,33 @@
+BEGIN FUNCTION CreateEvent(title, start_time, end_time, description, category, location)
+    TRY
+        IF title, start_time, or end_time is empty THEN
+            DISPLAY error "Title, start time, and end time are required"
+        END IF
+            
+        SET parsed_start_time TO Parse datetime from start_time
+        SET parsed_end_time TO Parse datetime from end_time
+            
+        IF parsed_start_time is invalid OR parsed_end_time is invalid THEN
+            DISPLAY error "Invalid datetime format"
+        END IF
+            
+        IF parsed_end_time LESS THAN OR EQUAL TO parsed_start_time THEN
+            DISPLAY error "End time must be after start time"
+        END IF
+            
+        SET user_id TO Extract user ID from JWT token
+            
+        IF user_id is invalid THEN
+            DISPLAY error "Authentication failed"
+        END IF
+            
+        CREATE new CalendarEvent with title, start_time, end_time, description, category, location, user_id
+            
+        SAVE event to database
+            
+        DISPLAY "Event created successfully"
+            
+    CATCH error THEN
+        DISPLAY error "Failed to create event. Please try again."
+    END TRY
+END FUNCTION

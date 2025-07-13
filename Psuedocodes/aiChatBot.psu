@@ -1,0 +1,39 @@
+BEGIN FUNCTION GenerateResponse(prompt, conversation_id, context)
+    
+    SET prompt to users input
+    
+    IF prompt is NONE THEN
+        DISPLAY "Error: Prompt is required"
+    END IF
+    
+    IF conversation_id is NONE THEN
+        SET conversation_id TO newConversation
+    ELSE
+        SET conversation TO conversation(conversation_id)
+        IF conversation is "NOT_FOUND" THEN
+            DISPLAY "Error: Conversation not found"
+        END IF
+    END IF
+
+    SET context to conversation_id + prompt
+    
+    SET response TO GenerateAIResponse(context)
+    
+    STOREMessage(conversation_id, "user", prompt)
+    STOREMessage(conversation_id, "assistant", response)
+    
+    SET formatted_response TO {
+        "response": response,
+        "conversation_id": conversation_id,
+        "history": [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": response}
+        ],
+        "context": context
+    }
+    
+    DISPLAY "Response generated successfully"
+    ON ERROR
+        DISPLAY "Error: Failed to generate response. Please try again."
+    END ON ERROR
+END FUNCTION

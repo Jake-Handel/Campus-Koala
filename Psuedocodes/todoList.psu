@@ -1,0 +1,20 @@
+BEGIN TodoList
+    FUNCTION CreateTask(title, date, description, priority)
+        TRY
+            IF title or priority is empty THEN
+                DISPLAY error "Title and priority are required"
+                RETURN
+            END IF
+            
+            SEND POST request to '/api/tasks' with data title, date, description, priority
+            
+            CREATE new Task with title, date, description, priority, completion, user_id
+            
+            SAVE task to database
+            
+            DISPLAY New task
+        CATCH error THEN
+            DISPLAY error "Failed to create task. Please try again."
+        END TRY
+    END FUNCTION
+END TodoList
