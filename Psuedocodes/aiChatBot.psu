@@ -1,38 +1,48 @@
+# AI ChatBot Response Generation
+# This function handles the core chat functionality by processing user input and generating AI responses
+# Parameters:
+# - prompt: The user's input message
+# - conversation_id: Unique identifier for the conversation thread (optional)
+# - context: Additional context for the conversation (optional)
 BEGIN FUNCTION GenerateResponse(prompt, conversation_id, context)
     
+    # Get and validate user input
     SET prompt to users input
     
+    # Check if prompt is provided
     IF prompt is NONE THEN
         DISPLAY "Error: Prompt is required"
     END IF
     
+    # Handle conversation management
     IF conversation_id is NONE THEN
+        # Start a new conversation if no ID is provided
         SET conversation_id TO newConversation
     ELSE
+        # Retrieve existing conversation
         SET conversation TO conversation(conversation_id)
         IF conversation is "NOT_FOUND" THEN
             DISPLAY "Error: Conversation not found"
         END IF
     END IF
 
+    # Prepare context for the AI by combining conversation history and new prompt
     SET context to conversation_id + prompt
     
+    # Generate AI response using the prepared context
     SET response TO GenerateAIResponse(context)
     
+    # Store both user message and AI response in conversation history
     STOREMessage(conversation_id, "user", prompt)
     STOREMessage(conversation_id, "assistant", response)
     
-    SET formatted_response TO {
-        "response": response,
-        "conversation_id": conversation_id,
-        "history": [
-            {"role": "user", "content": prompt},
-            {"role": "assistant", "content": response}
-        ],
-        "context": context
-    }
+    # Format the complete response with conversation context
+    SET formatted_response TO response, conversation_id, history
     
+    # Return success message
     DISPLAY "Response generated successfully"
+    
+    # Error handling
     ON ERROR
         DISPLAY "Error: Failed to generate response. Please try again."
     END ON ERROR

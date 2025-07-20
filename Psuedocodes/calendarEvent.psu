@@ -1,33 +1,51 @@
+# Calendar Event Creation
+# This function handles the creation of new calendar events with validation and error handling
+# Parameters:
+# - title: The title of the event (required)
+# - start_time: When the event begins (required, in ISO 8601 format)
+# - end_time: When the event ends (required, in ISO 8601 format)
+# - description: Optional detailed description of the event
+# - category: Optional category for the event (e.g., 'Work', 'Personal')
+# - location: Optional physical or virtual location of the event
 BEGIN FUNCTION CreateEvent(title, start_time, end_time, description, category, location)
     TRY
+        # Validate required fields
         IF title, start_time, or end_time is empty THEN
             DISPLAY error "Title, start time, and end time are required"
         END IF
-            
+        
+        # Parse datetime strings into datetime objects
         SET parsed_start_time TO Parse datetime from start_time
         SET parsed_end_time TO Parse datetime from end_time
-            
+        
+        # Validate datetime format
         IF parsed_start_time is invalid OR parsed_end_time is invalid THEN
             DISPLAY error "Invalid datetime format"
         END IF
-            
+        
+        # Validate time range
         IF parsed_end_time LESS THAN OR EQUAL TO parsed_start_time THEN
             DISPLAY error "End time must be after start time"
         END IF
-            
+        
+        # Authenticate user
         SET user_id TO Extract user ID from JWT token
-            
+        
+        # Verify authentication
         IF user_id is invalid THEN
             DISPLAY error "Authentication failed"
         END IF
-            
+        
+        # Creates a new event object
         CREATE new CalendarEvent with title, start_time, end_time, description, category, location, user_id
-            
+        
+        # Saves the event to the database
         SAVE event to database
-            
+        
         DISPLAY "Event created successfully"
-            
+        
     CATCH error THEN
+        # Catches any errors
         DISPLAY error "Failed to create event. Please try again."
     END TRY
 END FUNCTION
