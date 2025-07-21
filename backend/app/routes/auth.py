@@ -1,15 +1,26 @@
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify, abort, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_limiter.util import get_remote_address
 from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import User
+from app.extensions import limiter
 import re
 from app.utils import validate_request_data
 from datetime import timedelta
 import traceback
 
+# Rate limiting configuration
+def get_remote_identifier():
+    # Use JWT identity if available, otherwise use IP address
+    try:
+        return str(get_jwt_identity() or request.remote_addr)
+    except:
+        return request.remote_addr
+
 bp = Blueprint('auth', __name__, url_prefix='/api')
 
+@limiter.limit("5 per hour", key_func=get_remote_identifier)
 @bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     if request.method == 'OPTIONS':
@@ -67,6 +78,7 @@ def register():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
+@limiter.limit("10 per hour", key_func=get_remote_address)
 @bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     if request.method == 'OPTIONS':

@@ -1,7 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_limiter.util import get_remote_address
+from app.extensions import limiter
 from app.utils.gemini import GeminiAPI
 from app.models.ai_conversation import AIConversation, AIMessage
+from app.utils.sanitize import sanitize_text, sanitize_html
 from app import db
 import logging
 
@@ -10,17 +13,34 @@ gemini_api = GeminiAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def get_user_identifier():
+    # Get user ID from JWT for rate limiting
+    try:
+        return str(get_jwt_identity() or request.remote_addr)
+    except:
+        return request.remote_addr
+
+@limiter.limit("10 per minute", key_func=get_user_identifier)
 @gemini_bp.route('/generate', methods=['POST'])
 @jwt_required()
 def generate_response():
     try:
-        data = request.json
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
         prompt = data.get('prompt')
+        if not prompt or not isinstance(prompt, str):
+            return jsonify({'error': 'Valid prompt is required'}), 400
+            
+        # Sanitize the prompt
+        prompt = sanitize_text(prompt)[:2000]  # Limit prompt length
+        
         conversation_id = data.get('conversation_id')
         context = data.get('context', '')  # Optional context from previous messages
         
-        if not prompt:
-            return jsonify({'error': 'Prompt is required'}), 400
+        if context and isinstance(context, str):
+            context = sanitize_text(context)[:4000]  # Limit context length
             
         # Get user_id from JWT
         user_id = get_jwt_identity()
@@ -44,26 +64,33 @@ def generate_response():
         # Build context from conversation history
         # Use provided context if available, otherwise build from conversation history
         if not context:
-            context = ""
+            context_parts = []
             for message in conversation.messages:
-                context += f"\n{message.role}: {message.content}"
-        context += f"\nuser: {prompt}"
+                if message.role and message.content:
+                    # Sanitize existing messages when building context
+                    role = sanitize_text(message.role)
+                    content = sanitize_text(message.content)
+                    context_parts.append(f"{role}: {content}")
+            context = "\n".join(context_parts)
+        
+        # Add current prompt to context with sanitization
+        context = f"{context}\nuser: {sanitize_text(prompt)}"
         
         # Generate response
         response = gemini_api.generate_response(context)
         
         # Store messages
         user_message = AIMessage(
+            conversation_id=conversation.id,
             role='user',
-            content=prompt,
-            conversation_id=conversation.id
+            content=sanitize_text(prompt)
         )
         db.session.add(user_message)
         
         assistant_message = AIMessage(
+            conversation_id=conversation.id,
             role='assistant',
-            content=response,
-            conversation_id=conversation.id
+            content=sanitize_text(response)
         )
         db.session.add(assistant_message)
         
