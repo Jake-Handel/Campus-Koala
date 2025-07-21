@@ -6,6 +6,10 @@ import { useTheme } from 'next-themes';
 import { Task } from '@/types/Task';
 import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiCheckSquare, FiCalendar, FiCircle, FiCheckCircle, FiList, FiAlertCircle, FiChevronDown } from 'react-icons/fi';
 
+/**
+ * Main Tasks Page component that handles task management
+ * Manages task state, API calls, and renders the task interface
+ */
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +34,10 @@ export default function TasksPage() {
     fetchTasks();
   }, [router]);
 
+  /**
+   * Fetches tasks from the API and updates the tasks state
+   * Handles authentication errors and loading states
+   */
   const fetchTasks = async () => {
     setIsLoading(true);
     try {
@@ -59,6 +67,10 @@ export default function TasksPage() {
     }
   };
 
+  /**
+   * Handles adding a new task
+   * Validates input and makes API call to create task
+   */
   const handleAddTask = async () => {
     if (!newTask.title.trim()) {
       alert('Please enter a task title');
@@ -110,6 +122,10 @@ export default function TasksPage() {
     }
   };
 
+  /**
+   * Deletes a task by ID
+   * @param taskId - ID of the task to delete
+   */
   const handleDeleteTask = async (taskId: number) => {
     try {
       const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
@@ -133,6 +149,10 @@ export default function TasksPage() {
     }
   };
 
+  /**
+   * Updates an existing task
+   * @param task - The updated task object
+   */
   const handleUpdateTask = async (task: Task) => {
     try {
       const token = localStorage.getItem('token');
@@ -179,6 +199,11 @@ export default function TasksPage() {
     }
   };
 
+  /**
+   * Toggles the completion status of a task
+   * @param taskId - ID of the task to update
+   * @param completed - Current completion status
+   */
   const handleToggleComplete = async (taskId: number, completed: boolean) => {
     try {
       const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {

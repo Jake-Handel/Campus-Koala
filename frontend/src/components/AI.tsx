@@ -85,43 +85,6 @@ export default function AIAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent text selection
-    if (resizeRef.current && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const startX = e.pageX;
-      const startY = e.pageY;
-      const startWidth = width;
-      const startHeight = height;
-    
-      const onMouseMove = (e: MouseEvent) => {
-        e.preventDefault(); // Prevent text selection during resize
-        const deltaX = e.pageX - startX;
-        const deltaY = e.pageY - startY;
-        
-        // Calculate new dimensions based on cursor movement
-        const newWidth = Math.max(400, Math.min(startWidth - deltaX, window.innerWidth * 0.6 - 40));
-        const newHeight = Math.max(400, Math.min(startHeight - deltaY, window.innerHeight * 0.8 - 40));
-        
-        setWidth(newWidth);
-        setHeight(newHeight);
-      };
-
-      const onMouseUp = () => {
-        document.body.style.userSelect = '';
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      };
-
-      // Add event listeners
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-      
-      // Prevent text selection during resize
-      document.body.style.userSelect = 'none';
-    }
-  };
-
   useEffect(() => {
     return () => {
       // Cleanup any remaining event listeners if they exist
