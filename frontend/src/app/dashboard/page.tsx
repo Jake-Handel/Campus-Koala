@@ -273,7 +273,7 @@ export default function DashboardPage() {
                 <FiClock className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <h4 className="text-base font-bold">Start Study Session</h4>
+                <h4 className="text-base font-bold">FocusFlow</h4>
                 <p className="text-xs text-white/80 mt-0.5">Focus with a timer</p>
               </div>
             </div>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                       return (
                         <div 
                           key={task.id} 
-                          onClick={() => router.push(`/tasks/${task.id}`)}
+                          onClick={() => router.push(`/tasks`)}
                           className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-gray-700/80 hover:bg-white dark:hover:bg-gray-600/90 border border-gray-100 dark:border-gray-600 hover:border-emerald-100 dark:hover:border-emerald-500/30 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer group"
                         >
                           <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${priorityColors[priorityText]}`} />
@@ -512,7 +512,7 @@ export default function DashboardPage() {
                 onClick={() => router.push('/calendar')} 
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center space-x-1 group"
               >
-                <span>View all events</span>
+                <span className="group-hover:translate-x-0.5 transition-transform">View all events</span>
                 <span className="group-hover:translate-x-0.5 transition-transform">→</span>
               </button>
             </div>
@@ -544,33 +544,36 @@ export default function DashboardPage() {
                     const eventColor = event.color || categoryColors[event.category || 'Other'] || categoryColors['Other'];
                     
                     return (
-                    <div 
-                      key={event.id} 
-                      className="flex gap-3 p-2 rounded-lg bg-white dark:bg-gray-700 hover:bg-opacity-80 dark:hover:bg-gray-600/80 shadow-sm hover:shadow transition-all duration-300 border border-gray-100 dark:border-gray-600 hover:border-opacity-70 transform hover:-translate-y-0.5 group"
-                      style={{
-                        borderLeft: `3px solid ${eventColor}`,
-                        background: `linear-gradient(to right, ${eventColor}0F, ${eventColor}05)`,
-                        borderColor: `${eventColor}30`
-                      }}
-                    >
-                      {/* Date column */}
-                      <div className="flex flex-col items-center justify-center min-w-[50px] text-center">
-                        <div 
-                          className="flex flex-col items-center justify-center w-10 h-10 rounded-lg shadow-sm"
-                          style={{
-                            background: `linear-gradient(135deg, ${eventColor} 0%, ${eventColor}CC 100%)`
-                          }}
-                        >
-                          <span className="text-white font-bold text-base">
-                            {moment(event.start).format('D')}
+                      <div 
+                        key={event.id} 
+                        className="flex gap-3 p-2 rounded-lg bg-white/80 dark:bg-gray-800/90 hover:bg-opacity-100 dark:hover:bg-gray-700/90 shadow-sm hover:shadow transition-all duration-300 border border-gray-100 dark:border-gray-600/50 hover:border-opacity-70 transform hover:-translate-y-0.5 group backdrop-blur-sm"
+                        style={{
+                          borderLeft: `3px solid ${eventColor}`,
+                          background: `linear-gradient(to right, ${eventColor}0A, ${eventColor}03)`,
+                          borderColor: `${eventColor}30`,
+                          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                        }}
+                      >
+                        {/* Date column */}
+                        <div className="flex flex-col items-center min-w-[60px] text-center">
+                          <div 
+                            className="flex flex-col items-center justify-center w-12 h-12 rounded-xl shadow-sm mb-1"
+                            style={{
+                              background: `linear-gradient(145deg, ${eventColor.replace('0.9', '1')}, ${eventColor.replace('0.9', '0.6')} 70%, ${eventColor.replace('0.9', '0.4')} 100%)`,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                              transform: 'translateZ(0)'
+                            }}
+                          >
+                            <span className="text-black dark:text-white font-bold text-lg leading-none">
+                              {moment(event.start).format('D')}
+                            </span>
+                            <span className="text-black/90 dark:text-white/90 text-xs font-medium mt-0.5">
+                              {moment(event.start).format('MMM').toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300 tracking-wide">
+                            {moment(event.start).format('ddd').toUpperCase()}
                           </span>
-                          <span className="text-white text-[10px] font-medium">
-                            {moment(event.start).format('MMM')}
-                          </span>
-                        </div>
-                        <span className="text-[10px] mt-0.5 text-gray-500 dark:text-gray-400 font-medium">
-                          {moment(event.start).format('ddd')}
-                        </span>
                       </div>
                       
                       {/* Event details */}

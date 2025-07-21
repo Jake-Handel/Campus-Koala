@@ -29,8 +29,8 @@ def generate_response():
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         # Get or create conversation
         conversation = None
@@ -80,8 +80,25 @@ def generate_response():
         }), 200
         
     except Exception as e:
-        logger.error(f"Error generating response: {str(e)}")
-        return jsonify({'error': 'Failed to generate response'}), 500
+        error_message = str(e)
+        logger.error(f"Error generating response: {error_message}")
+        
+        # Try to get more specific error information from Gemini API
+        if hasattr(e, 'response') and e.response:
+            try:
+                response_data = e.response.json()
+                if 'error' in response_data:
+                    error_message = f"Gemini API Error: {response_data['error']}"
+            except Exception:
+                pass
+        
+        return jsonify({
+            'error': error_message,
+            'details': {
+                'type': type(e).__name__,
+                'code': e.response.status_code if hasattr(e, 'response') and e.response else None
+            }
+        }), 500
 
 @gemini_bp.route('/conversations', methods=['GET'])
 @jwt_required()
@@ -93,8 +110,8 @@ def get_conversations():
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         conversations = AIConversation.get_conversations(user_id)
         return jsonify({
@@ -115,8 +132,8 @@ def get_conversation(conversation_id):
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         conversation = AIConversation.get_conversation(conversation_id, user_id)
         if not conversation:
@@ -140,8 +157,8 @@ def activate_conversation(conversation_id):
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         conversation = AIConversation.get_conversation(conversation_id, user_id)
         if not conversation:
@@ -164,8 +181,8 @@ def deactivate_conversation(conversation_id):
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         conversation = AIConversation.get_conversation(conversation_id, user_id)
         if not conversation:
@@ -195,8 +212,8 @@ def update_conversation_title(conversation_id):
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         # Get the conversation
         conversation = AIConversation.get_conversation(conversation_id, user_id)
@@ -236,8 +253,8 @@ def get_conversation_context(conversation_id):
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         conversation = AIConversation.get_conversation(conversation_id, user_id)
         if not conversation:
@@ -266,8 +283,8 @@ def delete_conversation(conversation_id):
 
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
 
         conversation = AIConversation.get_conversation(conversation_id, user_id)
         if not conversation:
@@ -302,8 +319,8 @@ def get_chat_history():
             
         try:
             user_id = int(user_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid user ID'}), 401
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'Invalid user ID: {str(e)}'}), 401
             
         # Get all conversations for user, ordered by most recent
         conversations = AIConversation.get_conversations(user_id)

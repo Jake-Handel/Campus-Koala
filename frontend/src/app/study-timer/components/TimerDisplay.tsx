@@ -1,10 +1,10 @@
-// frontend/src/app/study-timer/components/TimerDisplay.tsx
 'use client';
 
-import { motion, useAnimation } from 'framer-motion';
-import { Play, Pause, RotateCw, Plus } from 'lucide-react';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { Play, Pause, RotateCw, Plus, Gamepad } from 'lucide-react';
 import { StudySession } from '../types';
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, useState } from 'react';
+import GameModal from './modals/GameModal';
 
 interface TimerDisplayProps {
   currentSession: StudySession | null;
@@ -31,6 +31,7 @@ export default function TimerDisplay({
 }: TimerDisplayProps) {
   const controls = useAnimation();
   const circumference = 2 * Math.PI * 48;
+  const [showGameModal, setShowGameModal] = useState(false);
   
   // Calculate progress based on time remaining
   const progress = useMemo(() => {
@@ -53,7 +54,22 @@ export default function TimerDisplay({
   }, [progress, controls, circumference]);
   
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      {/* Game Indicator */}
+      {currentSession?.type === 'break' && (
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileHover={{ scale: 1.1 }}
+          className="absolute top-4 left-4 cursor-pointer"
+          onClick={() => setShowGameModal(true)}
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-lg">
+            <Gamepad className="w-5 h-5 text-white" />
+          </div>
+        </motion.div>
+      )}
+
       <div className="flex flex-col items-center justify-center py-4">
         <div className="relative w-72 h-72 md:w-80 md:h-80 mb-6">
           <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -153,6 +169,26 @@ export default function TimerDisplay({
           </button>
         </div>
       </div>
+      <AnimatePresence>
+        {showGameModal && (
+          <GameModal 
+            isOpen={showGameModal}
+            onClose={() => setShowGameModal(false)}
+            onSelectGame={(game) => {
+              // Update session metadata with selected game
+              if (currentSession) {
+                currentSession.metadata = {
+                  ...currentSession.metadata,
+                  gameType: game,
+                  showGame: true
+                };
+              }
+              setShowGameModal(true);
+            }}
+            currentSession={currentSession}
+          />
+        )}
+      </AnimatePresence>
     </div>
-  );
+  )
 }

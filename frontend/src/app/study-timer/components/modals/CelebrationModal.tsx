@@ -1,4 +1,3 @@
-// frontend/src/app/study-timer/components/modals/CelebrationModal.tsx
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';

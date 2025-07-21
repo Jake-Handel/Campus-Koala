@@ -15,10 +15,6 @@ import {
   ContinueStudying
 } from './components';
 
-// Default study session duration in minutes
-const DEFAULT_STUDY_DURATION = 25;
-const DEFAULT_BREAK_DURATION = 5;
-
 export default function StudyPlanner() {
   const { theme } = useTheme();
   // State for modals and UI
@@ -153,11 +149,9 @@ export default function StudyPlanner() {
     
     // Update day plan to mark session as completed
     setDayPlan(currentPlan => 
-      currentPlan
-        .filter(session => session.id !== prev.id)
-        .map(item => 
-          item.id === prev.id ? { ...item, completed: true } : item
-        )
+      currentPlan.map(item => 
+        item.id === prev.id ? { ...item, completed: true } : item
+      )
     );
     
     try {
@@ -417,6 +411,8 @@ export default function StudyPlanner() {
   const handleStartTimer = () => {
     if (!currentSession) {
       if (dayPlan.length > 0) {
+        const breakDuration = Math.max(1, Math.floor(dayPlan[0].duration / 3));
+        
         const sessionToStart = {
           ...dayPlan[0],
           id: `session-${Date.now()}`,
@@ -425,7 +421,7 @@ export default function StudyPlanner() {
           completed: false,
           type: dayPlan[0].type as 'study' | 'break',
           subject: dayPlan[0].subject || 'Study Session',
-          break_duration: dayPlan[0].break_duration || DEFAULT_BREAK_DURATION
+          break_duration: breakDuration
         };
         startSession(sessionToStart);
       } else {
@@ -438,6 +434,8 @@ export default function StudyPlanner() {
 
   // Handle start session from day plan
   const handleStartSession = (session: DayPlanItem) => {
+    const breakDuration = Math.max(1, Math.floor(session.duration / 3)); // At least 1 minute break
+    
     const newSession: StudySession = {
       ...session,
       id: `session-${Date.now()}`,
@@ -446,7 +444,7 @@ export default function StudyPlanner() {
       completed: false,
       type: session.type as 'study' | 'break',
       subject: session.subject || 'Study Session',
-      break_duration: session.break_duration || DEFAULT_BREAK_DURATION
+      break_duration: breakDuration
     };
     startSession(newSession);
   };
@@ -534,6 +532,9 @@ export default function StudyPlanner() {
                 currentSession={currentSession}
                 onAddSession={() => setShowTimerOptions(true)}
                 onStartSession={handleStartSession}
+                onRemoveSession={(sessionId) => {
+                  setDayPlan(prev => prev.filter(session => session.id !== sessionId));
+                }}
               />
             </div>
           </div>
@@ -633,7 +634,7 @@ export default function StudyPlanner() {
                   id: `break-${Date.now()}`,
                   type: 'break',
                   subject: 'Break',
-                  duration: newStudySession.break_duration || DEFAULT_BREAK_DURATION,
+                  duration: newStudySession.break_duration || Math.max(1, Math.floor((currentSession?.duration || newStudySession.duration) / 3)),
                   break_duration: 0,
                   isCurrent: true,
                   completed: false,
@@ -646,7 +647,7 @@ export default function StudyPlanner() {
                   id: `break-${Date.now()}`,
                   type: 'break',
                   subject: 'Break',
-                  duration: newStudySession.break_duration || DEFAULT_BREAK_DURATION,
+                  duration: newStudySession.break_duration || Math.max(1, Math.floor((currentSession?.duration || newStudySession.duration) / 3)),
                   break_duration: 0, 
                   isCurrent: true,
                   completed: false,

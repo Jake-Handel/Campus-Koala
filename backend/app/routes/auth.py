@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app, abort
+from flask import Blueprint, request, jsonify, abort
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from app import db
@@ -25,13 +25,21 @@ def register():
         
         password = data['password']
         # Validate password strength
-        if (
-        len(password) < 8 or 
-        not re.search(r'[A-Za-z]', password) or 
-        not re.search(r'[0-9]', password) or 
-        not re.search(r'[@$!%*?&]', password)
-        ):
-            return abort(400, description="Password format is incorrect, please include a special character, an upper and lowercase letter and must be more then 8 characters long.")
+        errors = []
+        if len(password) < 8:
+            errors.append("be at least 8 characters long")
+        if not re.search(r'[A-Z]', password):
+            errors.append("include at least one uppercase letter (A-Z)")
+        if not re.search(r'[a-z]', password):
+            errors.append("include at least one lowercase letter (a-z)")
+        if not re.search(r'[0-9]', password):
+            errors.append("include at least one number (0-9)")
+        if not re.search(r'[@$!%*?&]', password):
+            errors.append("include at least one special character (@$!%*?&)")
+            
+        if errors:
+            description = "Password must: " + ", ".join(errors)
+            return abort(400, description=description)
             
         # Check if user already exists
         if User.query.filter_by(username=data['username']).first():
@@ -125,41 +133,4 @@ def profile():
         return jsonify(user.to_dict()), 200
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@bp.route('/change-password', methods=['POST', 'OPTIONS'])
-@jwt_required()
-def change_password():
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        data = request.get_json()
-        
-        # Validate required fields
-        valid, error = validate_request_data(data, ['current_password', 'new_password'])
-        if not valid:
-            return jsonify({'error': error}), 400
-            
-        # Validate new password strength
-        if len(data['new_password']) < 8:
-            return jsonify({'error': 'New password must be at least 8 characters long'}), 400
-            
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-            
-        # Verify current password
-        if not user.verify_password(data['current_password']):
-            return jsonify({"error": "Current password is incorrect"}), 401
-            
-        # Update password
-        user.update_password(data['new_password'])
-        
-        return jsonify({"message": "Password updated successfully"}), 200
-        
-    except Exception as e:
-        db.session.rollback()
         return jsonify({"error": str(e)}), 500

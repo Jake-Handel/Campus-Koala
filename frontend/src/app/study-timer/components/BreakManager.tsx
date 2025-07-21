@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Gamepad2, BookOpen, Coffee, X, ArrowLeft } from 'lucide-react';
 import { SnakeGame, Minesweeper, Tetris } from '@/components/games';
 import { StudySession } from '../types';
-import CelebrationModal from './modals/CelebrationModal';
 import GameModal from './modals/GameModal';
 
 interface BreakManagerProps {
@@ -295,10 +294,10 @@ export default function BreakManager({
               
               <div className="mt-4 text-center">
                 <button
-                  onClick={onClose}
+                  onClick={() => setShowGameModal(true)}
                   className="inline-flex items-center text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Back to study
+                  <ArrowLeft className="w-4 h-4 mr-1" /> Back to Games
                 </button>
               </div>
             </div>

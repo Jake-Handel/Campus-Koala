@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Gamepad, Bomb, Blocks, Sparkles, ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';
-import { SnakeGame, Minesweeper } from '@/components/games';
+import { SnakeGame, Minesweeper, Tetris } from '@/components/games';
 
 interface StudySession {
   id: string;
@@ -85,8 +85,8 @@ export default function GameModal({ isOpen, onClose, onSelectGame, currentSessio
   ];
 
   const renderContent = () => {
-    if (selectedGame) {
-      // Render the selected game
+    // If a game is selected and we're in a break session, show the game
+    if (selectedGame && currentSession?.type === 'break') {
       if (selectedGame === 'snake') {
         return (
           <div className="w-full max-w-md p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
@@ -114,30 +114,11 @@ export default function GameModal({ isOpen, onClose, onSelectGame, currentSessio
           </div>
         );
       }
-    }
-    
-    // If we're in a break session that should show a game
-    if (currentSession?.metadata?.showGame) {
-      const gameType = currentSession.metadata.gameType;
       
-      if (gameType === 'snake') {
+      if (selectedGame === 'tetris') {
         return (
-          <div className="w-full max-w-md p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <SnakeGame onGameOver={handleGameOver} />
-            <button
-              onClick={handleBack}
-              className="mt-4 flex items-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back to games
-            </button>
-          </div>
-        );
-      }
-      
-      if (gameType === 'minesweeper') {
-        return (
-          <div className="w-full max-w-4xl p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <Minesweeper onGameOver={handleGameOver} />
+          <div className="w-full max-w-2xl p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+            <Tetris onGameEnd={handleGameOver} />
             <button
               onClick={handleBack}
               className="mt-4 flex items-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
@@ -148,7 +129,6 @@ export default function GameModal({ isOpen, onClose, onSelectGame, currentSessio
         );
       }
     }
-
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}

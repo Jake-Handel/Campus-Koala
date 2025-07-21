@@ -32,6 +32,7 @@ const eventCategories = [
   { name: 'Assignment', color: 'rgba(88, 86, 214, 0.9)' },
   { name: 'Meeting', color: 'rgba(52, 199, 89, 0.9)' },
   { name: 'Todo', color: 'rgba(175, 82, 222, 0.9)' },
+  { name: 'Sport', color: 'rgba(110, 242, 224, 0.9)' },
   { name: 'Other', color: 'rgba(255, 149, 0, 0.9)' },
 ];
 
@@ -45,6 +46,7 @@ export default function CalendarPage(): ReactElement {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'delete'>('create');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   useEffect(() => {
     setMounted(true);
@@ -130,6 +132,20 @@ export default function CalendarPage(): ReactElement {
 
   const handleUpdateEvent = async () => {
     if (!selectedEvent) return;
+    
+    const updatedEvent: NewEvent = {
+      title: selectedEvent.title,
+      start: selectedEvent.start.toISOString(),
+      end: selectedEvent.end.toISOString(),
+      location: selectedEvent.location || '',
+      category: selectedEvent.category || 'Other',
+      color: selectedEvent.color || '#FF9500',
+      description: selectedEvent.description || ''
+    };
+    
+    if (!validateForm(updatedEvent)) {
+      return;
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -211,10 +227,42 @@ export default function CalendarPage(): ReactElement {
     setModalType('delete');
   };
 
+  const validateForm = (eventData: NewEvent) => {
+    const errors: Record<string, string> = {};
+    
+    // Validate title
+    if (!eventData.title.trim()) {
+      errors.title = 'Event title is required';
+    }
+    
+    // Validate start time
+    if (!eventData.start) {
+      errors.start = 'Start time is required';
+    } else {
+      const startDate = new Date(eventData.start);
+      if (isNaN(startDate.getTime())) {
+        errors.start = 'Invalid start date/time';
+      }
+    }
+    
+    // Validate end time
+    if (!eventData.end) {
+      errors.end = 'End time is required';
+    } else {
+      const endDate = new Date(eventData.end);
+      if (isNaN(endDate.getTime())) {
+        errors.end = 'Invalid end date/time';
+      } else if (eventData.start && new Date(eventData.end) <= new Date(eventData.start)) {
+        errors.end = 'End time must be after start time';
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateEvent = async () => {
-    if (!newEvent.title || !newEvent.start || !newEvent.end) {
-      toast.error('Please fill in all required fields');
-      setError('Please fill in all required fields');
+    if (!validateForm(newEvent)) {
       return;
     }
 
@@ -271,6 +319,7 @@ export default function CalendarPage(): ReactElement {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
+    setFormErrors({});
     setNewEvent({
       title: '',
       start: '',
@@ -291,7 +340,7 @@ export default function CalendarPage(): ReactElement {
   }
 
   return (
-    <div className={`min-h-screen p-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen p-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-transparent'}`}>
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex justify-center items-center">
           <h1 className={`text-3xl font-bold bg-clip-text ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
@@ -384,14 +433,21 @@ export default function CalendarPage(): ReactElement {
                               } else {
                                 setSelectedEvent(prev => prev ? { ...prev, title: e.target.value } : null);
                               }
+                              // Clear error when user starts typing
+                              if (formErrors.title) {
+                                setFormErrors(prev => ({ ...prev, title: '' }));
+                              }
                             }}
                             className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
                               isDarkMode 
-                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
-                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                                ? `${formErrors.title ? 'border-red-500' : 'border-gray-600'} bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400` 
+                                : `${formErrors.title ? 'border-red-500' : 'border-gray-200'} bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500`
                             }`}
                             required
                           />
+                          {formErrors.title && (
+                            <p className="mt-1 text-sm text-red-500">{formErrors.title}</p>
+                          )}
                         </div>
                       </div>
 
@@ -402,69 +458,84 @@ export default function CalendarPage(): ReactElement {
                           Start Time
                         </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
-                          <div className="flex space-x-2">
-                            <div className="flex-1">
-                              <input
-                                type="date"
-                                id="startDate"
-                                value={modalType === 'create' 
-                                  ? newEvent.start.split('T')[0]
-                                  : selectedEvent?.start.toLocaleDateString('en-CA')}
-                                onChange={(e) => {
-                                  const newDate = e.target.value;
-                                  
-                                  if (modalType === 'create') {
-                                    const time = newEvent.start.includes('T') ? newEvent.start.split('T')[1] : '00:00';
-                                    setNewEvent(prev => ({
-                                      ...prev,
-                                      start: `${newDate}T${time}`
-                                    }));
-                                  } else if (selectedEvent) {
-                                    const newStart = new Date(selectedEvent.start);
-                                    const [year, month, day] = newDate.split('-').map(Number);
-                                    newStart.setFullYear(year, month - 1, day);
-                                    setSelectedEvent({ ...selectedEvent, start: newStart });
-                                  }
-                                }}
-                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
-                              isDarkMode 
-                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
-                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-                            }`}
-                                required
-                              />
+                          <div className="space-y-2">
+                            <div className="flex space-x-2">
+                              <div className="flex-1">
+                                <input
+                                  type="date"
+                                  id="startDate"
+                                  value={modalType === 'create' 
+                                    ? newEvent.start.split('T')[0]
+                                    : selectedEvent?.start.toLocaleDateString('en-CA')}
+                                  onChange={(e) => {
+                                    const newDate = e.target.value;
+                                    
+                                    if (modalType === 'create') {
+                                      const time = newEvent.start && newEvent.start.includes('T') ? newEvent.start.split('T')[1] : '08:00';
+                                      setNewEvent(prev => ({
+                                        ...prev,
+                                        start: `${newDate}T${time}`
+                                      }));
+                                    } else if (selectedEvent) {
+                                      const newStart = new Date(selectedEvent.start);
+                                      const [year, month, day] = newDate.split('-').map(Number);
+                                      newStart.setFullYear(year, month - 1, day);
+                                      setSelectedEvent({ ...selectedEvent, start: newStart });
+                                    }
+                                    
+                                    // Clear start date error when user selects a date
+                                    if (formErrors.start) {
+                                      setFormErrors(prev => ({ ...prev, start: '' }));
+                                    }
+                                  }}
+                                  className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                                    isDarkMode 
+                                      ? `${formErrors.start ? 'border-red-500' : 'border-gray-600'} bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400` 
+                                      : `${formErrors.start ? 'border-red-500' : 'border-gray-200'} bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500`
+                                  }`}
+                                  required
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <input
+                                  type="time"
+                                  id="startTime"
+                                  value={modalType === 'create' 
+                                    ? (newEvent.start.includes('T') ? newEvent.start.split('T')[1].substring(0, 5) : '08:00')
+                                    : selectedEvent?.start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                  onChange={(e) => {
+                                    const newTime = e.target.value;
+                                    
+                                    if (modalType === 'create') {
+                                      const date = newEvent.start ? newEvent.start.split('T')[0] : new Date().toISOString().split('T')[0];
+                                      setNewEvent(prev => ({
+                                        ...prev,
+                                        start: `${date}T${newTime}`
+                                      }));
+                                    } else if (selectedEvent) {
+                                      const newStart = new Date(selectedEvent.start);
+                                      const [hours, minutes] = newTime.split(':').map(Number);
+                                      newStart.setHours(hours, minutes, 0, 0);
+                                      setSelectedEvent({ ...selectedEvent, start: newStart });
+                                    }
+                                    
+                                    // Clear start time error when user selects a time
+                                    if (formErrors.start) {
+                                      setFormErrors(prev => ({ ...prev, start: '' }));
+                                    }
+                                  }}
+                                  className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                                    isDarkMode 
+                                      ? `${formErrors.start ? 'border-red-500' : 'border-gray-600'} bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400` 
+                                      : `${formErrors.start ? 'border-red-500' : 'border-gray-200'} bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500`
+                                  }`}
+                                  required
+                                />
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <input
-                                type="time"
-                                id="startTime"
-                                value={modalType === 'create' 
-                                  ? (newEvent.start.includes('T') ? newEvent.start.split('T')[1].substring(0, 5) : '00:00')
-                                  : selectedEvent?.start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                onChange={(e) => {
-                                  const newTime = e.target.value;
-                                  
-                                  if (modalType === 'create') {
-                                    const date = newEvent.start.split('T')[0];
-                                    setNewEvent(prev => ({
-                                      ...prev,
-                                      start: `${date}T${newTime}`
-                                    }));
-                                  } else if (selectedEvent) {
-                                    const newStart = new Date(selectedEvent.start);
-                                    const [hours, minutes] = newTime.split(':').map(Number);
-                                    newStart.setHours(hours, minutes, 0, 0);
-                                    setSelectedEvent({ ...selectedEvent, start: newStart });
-                                  }
-                                }}
-                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
-                              isDarkMode 
-                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
-                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-                            }`}
-                                required
-                              />
-                            </div>
+                            {formErrors.start && (
+                              <p className="mt-1 text-sm text-red-500">{formErrors.start}</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -476,74 +547,87 @@ export default function CalendarPage(): ReactElement {
                           End Date
                         </label>
                         <div className="mt-1 relative rounded-xl shadow-sm">
-                          <div className="flex space-x-2">
-                            <div className="flex-1">
-                              <input
-                                type="date"
-                                id="endDate"
-                                value={modalType === 'create' 
-                                  ? newEvent.end.split('T')[0]
-                                  : selectedEvent?.end.toLocaleDateString('en-CA')}
-                                onChange={(e) => {
-                                  const newDate = e.target.value;
-                                  
-                                  if (modalType === 'create') {
-                                    const time = newEvent.end.includes('T') ? newEvent.end.split('T')[1] : '00:00';
-                                    setNewEvent(prev => ({
-                                      ...prev,
-                                      end: `${newDate}T${time}`
-                                    }));
-                                  } else if (selectedEvent) {
-                                    const newEnd = new Date(selectedEvent.end);
-                                    // Create a new date in the local timezone with the selected date
-                                    const [year, month, day] = newDate.split('-').map(Number);
-                                    newEnd.setFullYear(year, month - 1, day);
-                                    // Preserve the time portion
-                                    const hours = newEnd.getHours();
-                                    const minutes = newEnd.getMinutes();
-                                    newEnd.setHours(hours, minutes, 0, 0);
-                                    setSelectedEvent({ ...selectedEvent, end: newEnd });
-                                  }
-                                }}
-                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
-                              isDarkMode 
-                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
-                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-                            }`}
-                                required
-                              />
+                          <div className="space-y-2">
+                            <div className="flex space-x-2">
+                              <div className="flex-1">
+                                <input
+                                  type="date"
+                                  id="endDate"
+                                  value={modalType === 'create' 
+                                    ? newEvent.end.split('T')[0]
+                                    : selectedEvent?.end.toLocaleDateString('en-CA')}
+                                  onChange={(e) => {
+                                    const newDate = e.target.value;
+                                    
+                                    if (modalType === 'create') {
+                                      const time = newEvent.end && newEvent.end.includes('T') ? newEvent.end.split('T')[1] : '09:00';
+                                      setNewEvent(prev => ({
+                                        ...prev,
+                                        end: `${newDate}T${time}`
+                                      }));
+                                    } else if (selectedEvent) {
+                                      const newEnd = new Date(selectedEvent.end);
+                                      const [year, month, day] = newDate.split('-').map(Number);
+                                      newEnd.setFullYear(year, month - 1, day);
+                                      const hours = newEnd.getHours();
+                                      const minutes = newEnd.getMinutes();
+                                      newEnd.setHours(hours, minutes, 0, 0);
+                                      setSelectedEvent({ ...selectedEvent, end: newEnd });
+                                    }
+                                    
+                                    // Clear end date error when user selects a date
+                                    if (formErrors.end) {
+                                      setFormErrors(prev => ({ ...prev, end: '' }));
+                                    }
+                                  }}
+                                  className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                                    isDarkMode 
+                                      ? `${formErrors.end ? 'border-red-500' : 'border-gray-600'} bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400` 
+                                      : `${formErrors.end ? 'border-red-500' : 'border-gray-200'} bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500`
+                                  }`}
+                                  required
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <input
+                                  type="time"
+                                  id="endTime"
+                                  value={modalType === 'create' 
+                                    ? (newEvent.end.includes('T') ? newEvent.end.split('T')[1].substring(0, 5) : '09:00')
+                                    : selectedEvent?.end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                  onChange={(e) => {
+                                    const newTime = e.target.value;
+                                    
+                                    if (modalType === 'create') {
+                                      const date = newEvent.end ? newEvent.end.split('T')[0] : new Date().toISOString().split('T')[0];
+                                      setNewEvent(prev => ({
+                                        ...prev,
+                                        end: `${date}T${newTime}`
+                                      }));
+                                    } else if (selectedEvent) {
+                                      const newEnd = new Date(selectedEvent.end);
+                                      const [hours, minutes] = newTime.split(':').map(Number);
+                                      newEnd.setHours(hours, minutes, 0, 0);
+                                      setSelectedEvent({ ...selectedEvent, end: newEnd });
+                                    }
+                                    
+                                    // Clear end time error when user selects a time
+                                    if (formErrors.end) {
+                                      setFormErrors(prev => ({ ...prev, end: '' }));
+                                    }
+                                  }}
+                                  className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
+                                    isDarkMode 
+                                      ? `${formErrors.end ? 'border-red-500' : 'border-gray-600'} bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400` 
+                                      : `${formErrors.end ? 'border-red-500' : 'border-gray-200'} bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500`
+                                  }`}
+                                  required
+                                />
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <input
-                                type="time"
-                                id="endTime"
-                                value={modalType === 'create' 
-                                  ? (newEvent.end.includes('T') ? newEvent.end.split('T')[1].substring(0, 5) : '00:00')
-                                  : selectedEvent?.end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                onChange={(e) => {
-                                  const newTime = e.target.value;
-                                  
-                                  if (modalType === 'create') {
-                                    const date = newEvent.end.split('T')[0];
-                                    setNewEvent(prev => ({
-                                      ...prev,
-                                      end: `${date}T${newTime}`
-                                    }));
-                                  } else if (selectedEvent) {
-                                    const newEnd = new Date(selectedEvent.end);
-                                    const [hours, minutes] = newTime.split(':').map(Number);
-                                    newEnd.setHours(hours, minutes, 0, 0);
-                                    setSelectedEvent({ ...selectedEvent, end: newEnd });
-                                  }
-                                }}
-                                className={`block w-full px-5 py-3 rounded-xl border-2 focus:ring-0 transition-colors sm:text-sm ${
-                              isDarkMode 
-                                ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 focus:border-blue-400' 
-                                : 'border-gray-200 bg-white/50 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-                            }`}
-                                required
-                              />
-                            </div>
+                            {formErrors.end && (
+                              <p className="mt-1 text-sm text-red-500">{formErrors.end}</p>
+                            )}
                           </div>
                         </div>
                       </div>
