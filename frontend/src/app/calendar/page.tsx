@@ -108,14 +108,21 @@ export default function CalendarPage(): ReactElement {
       }
 
       const data = await response.json();
-      const processedEvents = data.map((event: any) => ({
-        ...event,
-        id: event.id.toString(),
-        start: new Date(event.start),
-        end: new Date(event.end),
-        color: eventCategories.find(cat => cat.name === event.category)?.color || 'rgba(128, 128, 128, 0.9)',
-        className: `event-${(event.category || 'other').toLowerCase()}`
-      }));
+      const processedEvents = data.map((event: any) => {
+        // Parse the date strings directly without timezone conversion
+        // The dates from the server should be in UTC
+        const start = new Date(event.start);
+        const end = new Date(event.end);
+        
+        return {
+          ...event,
+          id: event.id.toString(),
+          start,
+          end,
+          color: eventCategories.find(cat => cat.name === event.category)?.color || 'rgba(128, 128, 128, 0.9)',
+          className: `event-${(event.category || 'other').toLowerCase()}`
+        };
+      });
 
       setEvents(processedEvents);
     } catch (err) {
@@ -133,10 +140,15 @@ export default function CalendarPage(): ReactElement {
   const handleUpdateEvent = async () => {
     if (!selectedEvent) return;
     
+    // Format dates in ISO string without timezone conversion
+    const formatDateForServer = (date: Date) => {
+      return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString();
+    };
+    
     const updatedEvent: NewEvent = {
       title: selectedEvent.title,
-      start: selectedEvent.start.toISOString(),
-      end: selectedEvent.end.toISOString(),
+      start: formatDateForServer(selectedEvent.start),
+      end: formatDateForServer(selectedEvent.end),
       location: selectedEvent.location || '',
       category: selectedEvent.category || 'Other',
       color: selectedEvent.color || '#FF9500',
@@ -165,8 +177,8 @@ export default function CalendarPage(): ReactElement {
         body: JSON.stringify({
           title: selectedEvent.title,
           description: selectedEvent.description,
-          start_time: selectedEvent.start.toISOString(),
-          end_time: selectedEvent.end.toISOString(),
+          start_time: formatDateForServer(selectedEvent.start),
+          end_time: formatDateForServer(selectedEvent.end),
           category: selectedEvent.category,
           location: selectedEvent.location
         }),
@@ -273,10 +285,19 @@ export default function CalendarPage(): ReactElement {
         return;
       }
 
+      // Create date objects and ensure they're treated as local time
+      const startDate = new Date(newEvent.start);
+      const endDate = new Date(newEvent.end);
+
+      // Format dates in ISO string without timezone conversion
+      const formatDateForServer = (date: Date) => {
+        return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString();
+      };
+
       const eventData = {
         title: newEvent.title,
-        start_time: new Date(newEvent.start).toISOString(),
-        end_time: new Date(newEvent.end).toISOString(),
+        start_time: formatDateForServer(startDate),
+        end_time: formatDateForServer(endDate),
         location: newEvent.location,
         category: newEvent.category,
         description: newEvent.description
