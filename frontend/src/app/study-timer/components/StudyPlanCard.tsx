@@ -1,8 +1,6 @@
-// frontend/src/app/study-timer/components/StudyPlanCard.tsx
 'use client';
 
-import { useState } from 'react';
-import { Plus, CheckCircle, Clock as ClockIcon } from 'lucide-react';
+import { Plus, CheckCircle, Clock as ClockIcon, Trash2 } from 'lucide-react';
 import { DayPlanItem } from '../types';
 
 interface StudyPlanCardProps {
@@ -10,6 +8,7 @@ interface StudyPlanCardProps {
   currentSession: { id: string } | null;
   onAddSession: () => void;
   onStartSession: (session: DayPlanItem) => void;
+  onRemoveSession: (sessionId: string) => void;
 }
 
 export default function StudyPlanCard({
@@ -17,9 +16,8 @@ export default function StudyPlanCard({
   currentSession,
   onAddSession,
   onStartSession,
+  onRemoveSession,
 }: StudyPlanCardProps) {
-  const [expanded, setExpanded] = useState(true);
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 relative transition-colors duration-200">
       <div className="flex justify-between items-center mb-4">
@@ -120,22 +118,24 @@ export default function StudyPlanCard({
                               <ClockIcon className="w-3 h-3 text-gray-400 dark:text-gray-500 mr-1 flex-shrink-0" />
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 {isBreak ? breakDuration : session.duration} min
-                                {isBreak && ' break'}
                               </span>
                             </div>
                           </div>
-                          
                           <div className="flex items-center gap-2">
                             {session.completed && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Done
-                              </span>
+                              <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400 flex-shrink-0" />
                             )}
-                            {isBreak && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200">
-                                +{breakDuration} min
-                              </span>
+                            {session.completed && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRemoveSession(session.id);
+                                }}
+                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full transition-colors"
+                                title="Remove from view"
+                              >
+                                <Trash2 className="w-4 h-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" />
+                              </button>
                             )}
                           </div>
                         </div>
@@ -149,7 +149,9 @@ export default function StudyPlanCard({
         </>
       ) : (
         <div className="text-center py-8">
-          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4"
+          onClick={onAddSession}
+          >
             <Plus className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No study sessions planned</h4>

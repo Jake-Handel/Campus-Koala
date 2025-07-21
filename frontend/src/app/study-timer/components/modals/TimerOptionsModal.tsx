@@ -1,4 +1,3 @@
-// frontend/src/app/study-timer/components/modals/TimerOptionsModal.tsx
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +29,7 @@ export default function TimerOptionsModal({
     const { name, value } = e.target;
     setSessionDetails(prev => ({
       ...prev,
-      [name]: name === 'duration' ? Math.max(1, Math.min(120, Number(value))) : value
+      [name]: name === 'duration' ? Math.max(Math.min(120, Number(value))) : value
     }));
   };
 
@@ -134,7 +133,7 @@ export default function TimerOptionsModal({
                         type="number"
                         id="duration"
                         name="duration"
-                        min="1"
+                        min="0"
                         max="120"
                         value={sessionDetails.duration}
                         onChange={handleInputChange}

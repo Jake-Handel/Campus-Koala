@@ -344,6 +344,47 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
     }
   };
 
+  // Define view types and timeslot settings
+  type CalendarView = 'month' | 'week' | 'day';
+  
+  interface TimeslotSettings {
+    month: { timeslots: number; step: number };
+    week: { timeslots: number; step: number };
+    day: { timeslots: number; step: number };
+    [key: string]: { timeslots: number; step: number };
+  }
+
+  // Calculate timeslot settings based on view
+  const timeslotSettings: TimeslotSettings = {
+    month: {
+      timeslots: 2,
+      step: 30
+    },
+    week: {
+      timeslots: 1,
+      step: 60
+    },
+    day: {
+      timeslots: 1,
+      step: 60
+    },
+    work_week: {
+      timeslots: 1,
+      step: 60
+    },
+    agenda: {
+      timeslots: 1,
+      step: 60
+    }
+  };
+
+  // Ensure we have a valid view
+  const currentView = (['month', 'week', 'day', 'work_week', 'agenda'].includes(view) 
+    ? view 
+    : 'week') as CalendarView;
+    
+  const currentViewSettings = timeslotSettings[currentView];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -351,9 +392,7 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
       transition={{ duration: 0.3 }}
       className={twMerge("h-full w-full", className, isDarkMode ? 'dark' : '')}
     >
-      <div className={`calendar-modernized h-full ${
-        isDarkMode ? 'rbc-theme-dark' : ''
-      }`}>
+      <div className={`calendar-modernized h-full ${isDarkMode ? 'rbc-theme-dark' : ''}`}>
         <Calendar
           localizer={localizer}
           events={events}
@@ -365,14 +404,18 @@ export default function CalendarComponent({ events, onSelectEvent, className }: 
           components={components}
           className="h-full"
           date={currentDate}
-          view={view}
-          onView={handleViewChange}
+          view={currentView}
+          onView={(newView: View) => handleViewChange(newView)}
           onNavigate={handleNavigate}
           views={{
             month: true,
             week: true,
             day: true
           }}
+          timeslots={currentViewSettings.timeslots}
+          step={currentViewSettings.step}
+          min={new Date(0, 0, 0, 0, 0, 0)}  // 12:00 AM
+          max={new Date(0, 0, 0, 23, 59, 59)}  // 11:59 PM
           formats={{
             timeGutterFormat: (date: Date) => moment(date).format('h:mm A'),
             dayFormat: (date: Date) => moment(date).format('ddd D'),

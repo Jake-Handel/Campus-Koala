@@ -1,0 +1,77 @@
+# User Registration Process
+# This function handles new user registration with comprehensive validation and security measures
+# Parameters:
+# - username: Desired username (must be unique)
+# - email: User's email address (must be valid and unique)
+# - password: User's chosen password (must meet complexity requirements)
+BEGIN Register(username, email, password)
+    # Initialize error state
+    SET error to none
+    
+    # Validate all required fields are provided
+    IF username or email or password is empty THEN
+        SET error to "All fields must be filled"
+        DISPLAY error
+    END IF
+    
+    # Password validation rules
+    # Minimum length requirement
+    IF password length < 8 THEN
+        SET error to "Password must be at least 8 characters long"
+        DISPLAY error
+    END IF
+    
+    # Require at least one uppercase letter
+    IF password has no uppercase letter THEN
+        SET error to "Password must include at least one uppercase letter (A-Z)"
+        DISPLAY error
+    END IF
+    
+    # Require at least one lowercase letter
+    IF password has no lowercase letter THEN
+        SET error to "Password must include at least one lowercase letter (a-z)"
+        DISPLAY error
+    END IF
+    
+    # Require at least one number
+    IF password has no number THEN
+        SET error to "Password must include at least one number (0-9)"
+        DISPLAY error
+    END IF
+    
+    # Require at least one special character
+    IF password has no special character THEN
+        SET error to "Password must include at least one special character (@$!%*?&)"
+        DISPLAY error
+    END IF
+    
+    TRY
+        # Sends a request to the API that hanndles the task with relevent details
+        SEND POST request to '/api/register' with data username, email, and password
+        
+        # Checks if the username already exists`
+        IF User with username exists THEN
+            DISPLAY error "Username already exists. Please choose a different username."
+        END IF
+        
+        # Checks if the email already exists
+        IF User with email exists THEN
+            DISPLAY error "Email address is already registered. Please use a different email or try logging in."
+        END IF
+
+        # Hashes the password
+        SET hashedPassword to the SHA256 of password
+        
+        # Creates a new user object
+        SET newUser to Username, email, and hashedPassword
+        
+        # Saves the new user to the database
+        SAVE newUser to database
+        
+        DISPLAY success
+    
+    CATCH error THEN
+        # Catches any errors
+        DISPLAY error "Registration failed. Please try again."
+    END TRY
+END Register

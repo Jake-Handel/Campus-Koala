@@ -396,15 +396,19 @@ export default function TasksPage() {
         {/* Task List */}
         <div className="grid gap-4 sm:grid-cols-2">
           {[...tasks].sort((a, b) => {
-            // First sort by priority (higher number = higher priority)
+            // Tasks
+            if (a.completed !== b.completed) {
+              return a.completed ? -1 : 1;
+            }
+            // Priority
             if (b.priority !== a.priority) {
               return b.priority - a.priority;
             }
-            // Then sort by due date if both have due dates
+            // Due Date
             if (a.due_date && b.due_date) {
               return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
             }
-            // Put tasks with due dates before tasks without
+            // Due date over no due dates
             if (a.due_date) return -1;
             if (b.due_date) return 1;
             return 0;

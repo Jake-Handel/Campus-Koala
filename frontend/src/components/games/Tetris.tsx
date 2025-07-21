@@ -417,19 +417,27 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
                 <p className="font-medium">← →</p>
                 <p className="text-sm text-gray-300">Move left/right</p>
               </div>
-              <div className="bg-gray-700 p-3 rounded">
+              <div className={`p-3 rounded ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <p className="font-medium">↑</p>
                 <p className="text-sm text-gray-300">Rotate piece</p>
               </div>
-              <div className="bg-gray-700 p-3 rounded">
+              <div className={`p-3 rounded ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <p className="font-medium">↓</p>
                 <p className="text-sm text-gray-300">Soft drop</p>
               </div>
-              <div className="bg-gray-700 p-3 rounded">
+              <div className={`p-3 rounded ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <p className="font-medium">Space</p>
                 <p className="text-sm text-gray-300">Hard drop</p>
               </div>
-              <div className="bg-gray-700 p-3 rounded col-span-2 text-center">
+              <div className={`p-3 rounded ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <p className="font-medium">P</p>
                 <p className="text-sm text-gray-300">Pause game</p>
               </div>
@@ -521,23 +529,33 @@ export default function Tetris({ onGameEnd }: TetrisProps) {
                   <span>Move</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-gray-700 px-2 py-1 rounded w-8 text-center">↑</span>
+                  <span className={`px-2 py-1 rounded w-8 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100 border border-gray-200'
+                  }`}>↑</span>
                   <span>Rotate</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-gray-700 px-2 py-1 rounded w-8 text-center">↓</span>
+                  <span className={`px-2 py-1 rounded w-8 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100 border border-gray-200'
+                  }`}>↓</span>
                   <span>Soft drop</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-gray-700 px-2 py-1 rounded text-xs w-14 text-center">Space</span>
+                  <span className={`px-2 py-1 rounded text-xs w-14 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100 border border-gray-200'
+                  }`}>Space</span>
                   <span>Hard drop</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-gray-700 px-2 py-1 rounded w-8 text-center">P</span>
+                  <span className={`px-2 py-1 rounded w-8 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100 border border-gray-200'
+                  }`}>P</span>
                   <span>Pause</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-gray-700 px-2 py-1 rounded text-xs w-14 text-center">R</span>
+                  <span className={`px-2 py-1 rounded text-xs w-14 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100 border border-gray-200'
+                  }`}>R</span>
                   <span>Restart</span>
                 </div>
               </div>

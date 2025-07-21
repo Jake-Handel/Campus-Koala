@@ -1,19 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [showMatchIndicator, setShowMatchIndicator] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setShowMatchIndicator(password !== '' && password === confirmPassword);
+  }, [password, confirmPassword]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); // Clear any previous errors
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
     
     try {
       const response = await fetch('http://localhost:5000/api/register', {
@@ -49,7 +61,7 @@ export default function RegisterPage() {
           </div>
         )}
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <label htmlFor="username" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Username
             </label>
@@ -63,7 +75,7 @@ export default function RegisterPage() {
               required
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Email
             </label>
@@ -77,7 +89,7 @@ export default function RegisterPage() {
               required
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Password
             </label>
@@ -89,7 +101,27 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
             />
+          </div>
+          <div className="space-y-2 relative">
+            <label htmlFor="confirmPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              className="input pr-10 h-10"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            {showMatchIndicator && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center h-full text-green-500">
+                <Check className="h-5 w-5" />
+              </div>
+            )}
           </div>
           <button type="submit" className="btn btn-primary w-full">
             Create Account

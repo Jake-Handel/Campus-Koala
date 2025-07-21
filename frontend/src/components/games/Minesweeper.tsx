@@ -142,7 +142,8 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
       setIsFirstClick(false);
       // Start timer after mines are placed
       startTimer();
-      revealCell(newBoard, row, col);
+      // Reveal a larger area on first click
+      revealCell(newBoard, row, col, true);
       return;
     }
     
@@ -150,17 +151,17 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
     if (board[row][col].isFlagged) return;
     
     // Reveal the cell
-    revealCell([...board], row, col);
+    revealCell([...board], row, col, false);
   };
   
   // Reveal a cell and handle game over or cascade
-  const revealCell = (board: Cell[][], row: number, col: number) => {
+  const revealCell = (board: Cell[][], row: number, col: number, isFirstClick: boolean = false) => {
     // Out of bounds or already revealed
     if (row < 0 || row >= rows || col < 0 || col >= cols || board[row][col].isRevealed) {
       return;
     }
     
-    // Game over if mine is clicked
+    // Game over if mine is clicked (shouldn't happen on first click due to mine placement)
     if (board[row][col].isMine) {
       // Reveal all mines
       const newBoard = board.map(row => 
@@ -179,13 +180,27 @@ export default function Minesweeper({ onGameOver }: { onGameOver: (score: number
     // Reveal current cell
     board[row][col].isRevealed = true;
     
-    // If it's an empty cell, reveal neighbors
-    if (board[row][col].neighborMines === 0) {
-      // Reveal all 8 neighbors
-      for (let di = -1; di <= 1; di++) {
-        for (let dj = -1; dj <= 1; dj++) {
+    // If it's an empty cell or it's the first click, reveal more cells
+    if (board[row][col].neighborMines === 0 || isFirstClick) {
+      // For first click, reveal a larger area (3x3 or 5x5 grid)
+      const revealDistance = isFirstClick ? 2 : 1;
+      
+      for (let di = -revealDistance; di <= revealDistance; di++) {
+        for (let dj = -revealDistance; dj <= revealDistance; dj++) {
           if (di === 0 && dj === 0) continue;
-          revealCell(board, row + di, col + dj);
+          const newRow = row + di;
+          const newCol = col + dj;
+          
+          // Only reveal cells that are within bounds and not already revealed
+          if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && !board[newRow][newCol].isRevealed) {
+            // If it's a mine or a number, just reveal it without further recursion
+            if (board[newRow][newCol].isMine || board[newRow][newCol].neighborMines > 0) {
+              board[newRow][newCol].isRevealed = true;
+            } else {
+              // If it's an empty cell, recursively reveal its neighbors
+              revealCell(board, newRow, newCol, false);
+            }
+          }
         }
       }
     }

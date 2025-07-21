@@ -1,4 +1,3 @@
-// frontend/src/app/study-timer/types.ts
 export interface StudySession {
     id: string;
     subject: string;

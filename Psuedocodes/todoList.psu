@@ -1,0 +1,35 @@
+# Todo List Module
+# This module handles the creation and management of todo list tasks
+# Includes validation, error handling, and database operations
+BEGIN TodoList
+    
+    # Create a new task in the todo list
+    # Parameters:
+    # - title: Short description of the task (required)
+    # - date: Due date for the task (optional)
+    # - description: Detailed information about the task (optional)
+    # - priority: Importance level of the task (required: 'low', 'medium', 'high')
+    FUNCTION CreateTask(title, date, description, priority)
+        TRY
+            # Validate required fields
+            IF title or priority is empty THEN
+                DISPLAY error "Title and priority are required"
+            END IF
+            
+            # Sends a request to the API that hanndles the task with relevent details
+            SEND POST request to '/api/tasks' with data title, date, description, priority
+            
+            # Creates a new task with the relevent details
+            CREATE new Task with title, date, description, priority, completion, user_id
+            
+            # Saves the task to the database
+            SAVE task to database
+            
+            DISPLAY New task
+            
+        CATCH error THEN
+            # Catches any errors
+            DISPLAY error "Failed to create task. Please try again."
+        END TRY
+    END FUNCTION
+END TodoList

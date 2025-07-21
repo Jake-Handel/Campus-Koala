@@ -1,0 +1,51 @@
+# User Login Process
+# This function handles user authentication by validating credentials and establishing a session
+# Parameters:
+# - username: The user's unique identifier (email or username)
+# - password: The user's password (will be hashed for comparison)
+BEGIN Login(username, password)
+    # Initialize error state
+    SET error to none
+    
+    # Validate input fields
+    IF username or password is empty THEN
+        SET error to "All fields must be filled"
+        DISPLAY error
+    END IF
+    
+    TRY
+        # Send authentication request to the server
+        SEND POST request to '/api/login' with data username, and password
+        
+        # Retrieve user data from database
+        SET user = username
+        
+        # Verify user exists
+        IF user not found THEN
+            # Generic message to avoid username enumeration
+            DISPLAY error "Invalid username or password"
+        END IF
+        
+        # Hash the provided password for comparison
+        SET hashedPassword to the SHA256 of password
+
+        # Verify password matches stored hash
+        IF user password_hash does not match hashedPassword THEN
+            # Generic message to avoid timing attacks
+            DISPLAY error "Invalid username or password"
+        END IF
+        
+        # Creates a JWT token with user information
+        SET access_token = JWT encode user.id and user.username
+        
+        # Stores the token in local storage for subsequent requests
+        SET localStorage.token = access_token
+        
+        # Redirects to dashboard
+        Redirect to dashboard
+        
+    CATCH error THEN
+        # Catches any errors
+        DISPLAY error "Login failed. Please check your credentials."
+    END TRY
+END Login
