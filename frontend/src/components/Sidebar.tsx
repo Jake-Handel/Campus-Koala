@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { Task } from '../types/Task';
 import { FiMenu, FiX, FiHome, FiCheckSquare, FiCalendar, FiClock, FiLogOut } from 'react-icons/fi';
 import SettingsButton from './SettingsButton';
@@ -16,30 +17,10 @@ const navItems = [
 
 export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState('light');
+  const { theme, systemTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-
-  // Handle theme changes
-  useEffect(() => {
-    const handleThemeChange = () => {
-      const html = document.documentElement;
-      const theme = html.getAttribute('data-theme') || 'light';
-      setCurrentTheme(theme);
-    };
-    
-    // Initial theme check
-    handleThemeChange();
-    
-    // Listen for theme changes
-    const observer = new MutationObserver(handleThemeChange);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme']
-    });
-    
-    return () => observer.disconnect();
-  }, []);
+  const currentTheme = theme === 'system' ? systemTheme : theme;
 
   // Ensure sidebar is closed when route changes
   useEffect(() => {
@@ -74,7 +55,7 @@ export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {
                      hover:bg-white hover:shadow-xl hover:scale-105
                      focus:outline-none focus:ring-2 focus:ring-primary/50
                      transition-all duration-200
-                     ${getThemeClass('dark:bg-gray-800/90 dark:border-gray-700 dark:hover:bg-gray-700', '')}`}
+                     dark:bg-gray-800/90 dark:border-gray-700 dark:hover:bg-gray-700`}
             aria-label="Open Menu"
           >
             <div className="flex w-5 flex-col items-end space-y-1.5">
@@ -93,8 +74,8 @@ export default function Sidebar({ tasks = [] }: { tasks?: Task[] }) {
       <div
         className={`fixed top-0 left-0 h-full bg-white/90 backdrop-blur-sm shadow-xl 
                  transition-all duration-300 ease-in-out z-40 overflow-visible
-                 border-r ${currentTheme === 'dark' ? 'border-gray-800' : 'border-gray-100'} ${isOpen ? 'w-64' : 'w-0'}
-                 ${currentTheme === 'dark' ? 'dark:bg-gray-900/95' : ''}`}
+                 border-r border-gray-100 dark:border-gray-800 ${isOpen ? 'w-64' : 'w-0'}
+                 bg-white/90 dark:bg-gray-900/95`}
         style={{ overflow: 'visible' }}
       >
         {isOpen && (
